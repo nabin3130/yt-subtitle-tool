@@ -477,100 +477,44 @@ function confirmUpload() {
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 
 async function doUpload() {
-  // 1. [중요] 아까 GAS에서 배포 후 복사한 '웹 앱 URL'을 여기에 넣으세요.
-  const gasUrl = "https://script.google.com/macros/s/AKfycbxdPAaLIQ3wZNC119YXuK6jod2WEfURGc8PVTagsX0kiJYuxLiKmYgk0ebwQh2wZKLmnw/exec"; 
+  // 1. [중요] 주소 끝이 반드시 /exec 로 끝나야 합니다!
+  const gasUrl = "여기에_GAS_주소를_넣으세요"; 
   
-  if (!S.videoId) return alert("먼저 영상 ID를 입력해주세요. (STEP 2)");
-  const langKeys = Object.keys(S.srts);
-  if (langKeys.length === 0) return alert("업로드할 자막 파일이 없습니다.");
+  if (!S.videoId) return alert("영상 ID를 입력해주세요.");
+  if (Object.keys(S.srts).length === 0) return alert("자막 파일이 없습니다.");
 
-  // 2. 제목과 설명을 입력받습니다. (영어 기준 권장)
-  const mainTitle = prompt("🎬 유튜브에 표시될 [영어 제목]을 입력하세요:", "I quit law for crypto #shorts");
-  if (!mainTitle) return; 
-  
-  const mainDesc = prompt("📝 유튜브에 표시될 [영어 설명]을 입력하세요:", "Why I left my career. #crypto #shorts");
-  if (!mainDesc) return;
+  const mainTitle = prompt("🎬 영어 제목:", "I quit law for crypto");
+  const mainDesc = prompt("📝 영어 설명:", "My story about crypto.");
+  if (!mainTitle || !mainDesc) return;
 
-  // UI 상태 업데이트
-  closeModal();
-  S.results = [];
-  const lb = document.getElementById('logbox');
-  document.getElementById('upload-log').style.display = 'block';
-  lb.innerHTML = '<span class="ll linfo">🚀 구글 서버로 데이터를 전송 중입니다... (1~2분 소요)</span>';
-  document.getElementById('btn-upload').disabled = true;
+  // 버튼 상태 변경
+  const btn = document.getElementById('btn-upload');
+  btn.disabled = true;
+  btn.innerHTML = '전송 중...';
 
-  // GAS로 보낼 데이터 뭉치 만들기
+  // 보따리 구성
   const payload = {
     videoId: S.videoId,
     subtitles: S.srts,
-    mainTitle: mainTitle, 
+    mainTitle: mainTitle,
     mainDesc: mainDesc
   };
 
   try {
-    // 3. 구글 서버(GAS)로 데이터 전송 (CORS 이슈 방지를 위해 no-cors 사용 가능)
-    // GAS가 비동기로 작업을 처리하므로 fetch 직후 성공으로 간주하거나 응답을 기다립니다.
+    // [핵심 수정] fetch 방식을 가장 안전한 형태로 변경
     await fetch(gasUrl, {
-      method: "POST",
-      mode: "no-cors", 
-      headers: { "Content-Type": "text/plain" },
+      method: "POST", // 반드시 POST여야 합니다!
+      mode: "no-cors",
+      cache: "no-cache",
+      headers: { "Content-Type": "text/plain" }, // GAS는 text/plain으로 받아야 에러가 적습니다.
       body: JSON.stringify(payload)
     });
-    
-    // UI 업데이트 (GAS로 일단 넘어가면 성공으로 표시)
-    document.getElementById('upload-progress').style.width = '100%';
-    document.getElementById('upload-label').textContent = "전송 완료!";
-    lb.innerHTML += '<br><span class="ll lok">✅ 전송 성공! 구글 서버가 배경에서 번역 및 업로드를 진행합니다.</span>';
-    lb.innerHTML += '<br><span class="ll linfo">💡 결과는 잠시 후 유튜브 스튜디오에서 확인하세요.</span>';
-    
-    // 결과 리포트에 성공 기록 강제 주입
-    langKeys.forEach(k => S.results.push({lang: k, name: k, status: 'success'}));
-    
-    setTimeout(() => {
-        document.getElementById('nav-report').classList.add('done');
-        go('report');
-    }, 2000);
 
+    alert("🚀 전송 성공! 1~2분 뒤 유튜브 스튜디오를 확인하세요.");
+    btn.innerHTML = '업로드 완료';
   } catch (err) {
-    lb.innerHTML += `<br><span class="ll lerr">❌ 전송 실패: ${err.message}</span>`;
-    alert("전송 중 오류가 발생했습니다: " + err.message);
-    document.getElementById('btn-upload').disabled = false;
+    alert("❌ 에러: " + err.message);
+    btn.disabled = false;
+    btn.innerHTML = '🚀 YouTube 자동 업로드';
   }
 }
-
-// 리포트 기능은 GAS 방식에 맞춰 간소화합니다.
-function renderReport() {
-  const okCount = S.results.length;
-  document.getElementById('report-content').innerHTML = `
-    <div class="ibox">
-      🎉 전송이 완료되었습니다!<br>
-      구글 서버(GAS)가 <strong>${okCount}개 언어</strong>의 자막을 번역하여 업로드하고 있습니다.
-    </div>
-    <div class="wbox">
-      ⚠️ 유튜브 스튜디오 반영까지 약 1~3분 정도 걸릴 수 있습니다.<br>
-      영상 정보(제목/설명)의 Localization도 함께 업데이트됩니다.
-    </div>
-    <div class="bgrp"><button class="btn btn-p" onclick="resetAll()">🔄 새 영상 처리하기</button></div>
-  `;
-}
-
-// GAS 방식에서는 개별 재시도가 복잡하므로 기능을 비웁니다.
-async function retryLang(code) { alert("GAS 방식에서는 전체 다시하기를 이용해주세요."); }
-async function retryAll() { go('upload'); }
-
-function resetAll() {
-  S.videoId=''; S.srts={}; S.results=[];
-  document.getElementById('video-id').value='';
-  document.getElementById('upload-progress').style.width='0%';
-  document.getElementById('upload-label').textContent='대기 중...';
-  document.getElementById('upload-log').style.display='none';
-  document.getElementById('btn-upload').disabled=false;
-  const lc = document.getElementById('loaded-count');
-  if(lc) { lc.textContent='0개 파일 선택됨'; lc.className='badge bi'; }
-  buildList();
-  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('done'));
-  go('input');
-}
-</script>
-</body>
-</html>
