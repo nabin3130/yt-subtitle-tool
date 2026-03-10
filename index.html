@@ -1141,26 +1141,37 @@ async function doUpload() {
     addLog(`[${lang.code.toUpperCase()}] 자막 업로드 중...`);
 
     try {
-      const srtBlob = new Blob([state.translations[lang.code].srt], { type: 'text/plain' });
-      const metadata = JSON.stringify({
+      const srtContent = state.translations[lang.code].srt;
+      const metadata = {
         snippet: {
           videoId: state.videoId,
           language: lang.yt,
           name: lang.name,
           isDraft: false,
         }
-      });
+      };
 
-      const formData = new FormData();
-      formData.append('metadata', new Blob([metadata], { type: 'application/json' }));
-      formData.append('media', srtBlob);
+      const boundary = '-------314159265358979323846';
+      const delimiter = '\r\n--' + boundary + '\r\n';
+      const closeDelimiter = '\r\n--' + boundary + '--';
+      const body =
+        delimiter +
+        'Content-Type: application/json\r\n\r\n' +
+        JSON.stringify(metadata) +
+        delimiter +
+        'Content-Type: text/plain\r\n\r\n' +
+        srtContent +
+        closeDelimiter;
 
       const resp = await fetch(
         `https://www.googleapis.com/upload/youtube/v3/captions?uploadType=multipart&part=snippet`,
         {
           method: 'POST',
-          headers: { Authorization: 'Bearer ' + state.accessToken },
-          body: formData,
+          headers: {
+            Authorization: 'Bearer ' + state.accessToken,
+            'Content-Type': 'multipart/related; boundary="' + boundary + '"',
+          },
+          body: body,
         }
       );
 
