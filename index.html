@@ -535,15 +535,78 @@ function renderReport() {
     ${fail.length ? `
       <div class="stitle">실패 목록</div>
       <table class="rtable">
-        <thead><tr><th>코드</th><th>언어</th><th>실패 이유</th></tr></thead>
-        <tbody>${fail.map(r=>`<tr><td><span class="badge be">${r.lang.toUpperCase()}</span></td><td>${r.name}</td><td style="font-size:12px;color:var(--error)">${r.reason||'알 수 없음'}</td></tr>`).join('')}</tbody>
-      </table>` : '<div class="ibox">🎉 모든 언어 업로드 성공!</div>'}
+        <thead><tr><th>코드</th><th>언어</th><th>실패 이유</th><th></th></tr></thead>
+        <tbody>${fail.map(r=>`<tr><td><span class="badge be">${r.lang.toUpperCase()}</span></td><td>${r.name}</td><td style="font-size:12px;color:var(--error)">${r.reason||'알 수 없음'}</td><td><button class="btn btn-s" style="padding:6px 12px;font-size:12px;" onclick="retryLang('${r.lang}')">🔄 재시도</button></td></tr>`).join('')}</tbody>
+      </table>
+      <div class="bgrp"><button class="btn btn-d" onclick="retryAll()">🔄 실패 전체 재시도</button></div>
+      ` : '<div class="ibox">🎉 모든 언어 업로드 성공!</div>'}
     <div class="wbox" style="margin-top:16px;">
       💡 YouTube Studio에서 자막 반영까지 수 분 걸릴 수 있어요.<br>
       오늘 남은 Quota: 약 ${(10000-quota).toLocaleString()}점
     </div>
     <div class="bgrp"><button class="btn btn-p" onclick="resetAll()">🔄 새 영상 처리하기</button></div>
   `;
+}
+
+async function retryLang(code) {
+  if (!S.token) return alert('YouTube 토큰이 만료됐을 수 있어요. STEP 1에서 다시 연동해주세요.');
+  const lang = LANGS.find(l => l.code === code);
+  if (!lang || !S.srts[code]) return alert('SRT 파일이 없어요. STEP 3에서 다시 파일을 선택해주세요.');
+
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>';
+
+  try {
+    const bd = '-------314159265358979323846';
+    const dl = '\r\n--' + bd + '\r\n';
+    const cl = '\r\n--' + bd + '--';
+    const meta = {snippet:{videoId:S.videoId, language:lang.yt, name:lang.name, isDraft:false}};
+    const body = dl + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(meta) +
+                 dl + 'Content-Type: text/plain\r\n\r\n' + S.srts[code] + cl;
+    const res = await fetch(
+      'https://www.googleapis.com/upload/youtube/v3/captions?uploadType=multipart&part=snippet',
+      { method:'POST', headers:{ Authorization:'Bearer '+S.token, 'Content-Type':'multipart/related; boundary="'+bd+'"' }, body }
+    );
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || res.statusText); }
+
+    // 성공 처리
+    const idx = S.results.findIndex(r => r.lang === code);
+    if (idx !== -1) S.results[idx] = {lang:code, name:lang.name, status:'success'};
+    renderReport();
+  } catch(err) {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 재시도';
+    alert(`[${code.toUpperCase()}] 재시도 실패: ${err.message}`);
+  }
+}
+
+async function retryAll() {
+  const fails = S.results.filter(r => r.status === 'error');
+  for (const r of fails) {
+    await new Promise(res => setTimeout(res, 1000));
+    const lang = LANGS.find(l => l.code === r.lang);
+    if (!lang || !S.srts[r.lang]) continue;
+    try {
+      const bd = '-------314159265358979323846';
+      const dl = '\r\n--' + bd + '\r\n';
+      const cl = '\r\n--' + bd + '--';
+      const meta = {snippet:{videoId:S.videoId, language:lang.yt, name:lang.name, isDraft:false}};
+      const body = dl + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(meta) +
+                   dl + 'Content-Type: text/plain\r\n\r\n' + S.srts[r.lang] + cl;
+      const res = await fetch(
+        'https://www.googleapis.com/upload/youtube/v3/captions?uploadType=multipart&part=snippet',
+        { method:'POST', headers:{ Authorization:'Bearer '+S.token, 'Content-Type':'multipart/related; boundary="'+bd+'"' }, body }
+      );
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || res.statusText); }
+      const idx = S.results.findIndex(x => x.lang === r.lang);
+      if (idx !== -1) S.results[idx] = {lang:r.lang, name:lang.name, status:'success'};
+    } catch(err) {
+      const idx = S.results.findIndex(x => x.lang === r.lang);
+      if (idx !== -1) S.results[idx].reason = err.message;
+    }
+  }
+  renderReport();
 }
 
 function resetAll() {
