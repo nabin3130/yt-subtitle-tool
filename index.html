@@ -63,7 +63,6 @@
   .ll{display:block;} .lok{color:var(--success);} .lerr{color:var(--error);} .linfo{color:var(--muted);}
   @keyframes spin{to{transform:rotate(360deg)}}
   .spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
-  /* Lang rows */
   .lrow{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:border-color .2s;}
   .lrow.loaded{border-color:var(--success);}
   .lrow.uploading{border-color:var(--accent3);}
@@ -77,7 +76,6 @@
   .flab:hover .fbtn{border-color:var(--accent);color:var(--accent);}
   .fname{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;}
   .licon{font-size:18px;flex-shrink:0;width:24px;text-align:center;}
-  /* Report */
   .rcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0;}
   .rcard{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;}
   .rcard .num{font-family:'Space Mono',monospace;font-size:32px;font-weight:700;display:block;margin-bottom:4px;}
@@ -87,7 +85,6 @@
   .rtable th{background:var(--surface2);padding:10px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;border-bottom:1px solid var(--border);}
   .rtable td{padding:10px 14px;border-bottom:1px solid var(--border);}
   .rtable tr:hover td{background:var(--surface2);}
-  /* Modal */
   .mbg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:999;}
   .mbg.open{display:flex;}
   .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:480px;width:90%;}
@@ -131,8 +128,6 @@
   </div>
 
   <div class="content">
-
-    <!-- STEP 1 -->
     <div class="panel active" id="panel-setup">
       <div class="ptitle">// YOUTUBE_AUTH</div>
       <div class="pdesc">YouTube 계정을 연동합니다. 한 번만 설정하면 다음부터 자동으로 불러옵니다.</div>
@@ -156,7 +151,6 @@
       <div id="auth-msg" style="margin-top:16px;"></div>
     </div>
 
-    <!-- STEP 2 -->
     <div class="panel" id="panel-input">
       <div class="ptitle">// VIDEO_INPUT</div>
       <div class="pdesc">업로드할 YouTube 영상 정보를 입력합니다.</div>
@@ -170,13 +164,11 @@
       </div>
     </div>
 
-    <!-- STEP 3 -->
     <div class="panel" id="panel-upload">
       <div class="ptitle">// UPLOAD</div>
       <div class="pdesc">언어별 SRT 파일을 선택하세요. 파일을 선택한 언어만 YouTube에 업로드됩니다.</div>
       <div class="wbox">⚠️ 업로드 중에는 창을 닫거나 새로고침하지 마세요!</div>
 
-      <!-- Bulk upload area -->
       <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
         <label style="text-transform:none;letter-spacing:0;margin:0;cursor:pointer;">
           <input type="file" accept=".zip" style="display:none" onchange="onZip(event)" id="zip-input"/>
@@ -211,17 +203,14 @@
       </div>
     </div>
 
-    <!-- STEP 4 -->
     <div class="panel" id="panel-report">
       <div class="ptitle">// REPORT</div>
       <div class="pdesc">업로드 완료 결과입니다.</div>
       <div id="report-content"><span class="badge bw">⚠️ 아직 업로드가 완료되지 않았습니다.</span></div>
     </div>
-
   </div>
 </div>
 
-<!-- Modal -->
 <div class="mbg" id="modal">
   <div class="modal">
     <div class="mtitle">⚠️ 업로드 확인</div>
@@ -234,28 +223,8 @@
 </div>
 
 <script>
-  function copyForColab() {
-  const n = Object.keys(S.srts).length;
-  if (n === 0) return alert('먼저 자막 파일(SRT)들을 업로드하거나 선택해주세요.');
-
-  // 코랩이 읽기 편하도록 데이터를 뭉칩니다.
-  const colabData = {
-    videoId: S.videoId || "비디오ID를입력하세요",
-    subtitles: S.srts
-  };
-
-  const jsonStr = JSON.stringify(colabData);
-  
-  // 클립보드에 복사
-  navigator.clipboard.writeText(jsonStr).then(() => {
-    alert(`✅ ${n}개의 자막 데이터가 복사되었습니다!\n이제 구글 코랩에 붙여넣으세요.`);
-  }).catch(err => {
-    console.error('복사 실패:', err);
-    alert('복사에 실패했습니다. 콘솔을 확인해주세요.');
-  });
-}
 const LANGS = [
-  {code:'ko', name:'한국어',       yt:'ko'},
+  {code:'ko', name:'한국어',      yt:'ko'},
   {code:'zh', name:'중국어 간체',  yt:'zh-Hans'},
   {code:'es', name:'스페인어',     yt:'es'},
   {code:'pt', name:'포르투갈어',   yt:'pt'},
@@ -283,6 +252,44 @@ window.onload = () => {
   if (gk) document.getElementById('google-client-id').value = gk;
   buildList();
 };
+
+// ---------------------------------------------------------
+// [핵심] 코랩용 데이터 복사 함수 (다국어 정보 포함)
+// ---------------------------------------------------------
+function copyForColab() {
+  const n = Object.keys(S.srts).length;
+  if (n === 0) return alert('먼저 자막 파일(SRT)들을 업로드하거나 선택해주세요.');
+
+  const v_id = S.videoId || document.getElementById('video-id').value;
+
+  const colabData = {
+    videoId: v_id,
+    subtitles: S.srts,
+    localizations: {} 
+  };
+
+  for (const langCode in S.srts) {
+    const langInfo = LANGS.find(l => l.code === langCode);
+    const langName = langInfo ? langInfo.name : langCode.toUpperCase();
+    
+    // 유튜브 API용 언어 코드 매칭
+    let ytCode = langCode.toLowerCase();
+    if (ytCode === 'zh') ytCode = 'zh-Hans';
+
+    colabData.localizations[ytCode] = {
+      title: `[${langName}] 영상 제목을 입력하세요`,
+      description: `[${langName}] 영상 설명을 입력하세요`
+    };
+  }
+
+  const jsonStr = JSON.stringify(colabData);
+  navigator.clipboard.writeText(jsonStr).then(() => {
+    alert(`✅ ${n}개 언어의 [자막 + 다국어 제목/설명] 데이터가 복사되었습니다!\n이제 코랩에 붙여넣으세요.`);
+  }).catch(err => {
+    console.error('복사 실패:', err);
+    alert('복사에 실패했습니다.');
+  });
+}
 
 function go(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -344,31 +351,19 @@ function buildList() {
   `).join('');
 }
 
-// ─────────────────────────────────────────
-// 언어코드 자동 인식
-// ─────────────────────────────────────────
 function detectLang(filename) {
   const name = filename.toLowerCase().replace('.srt', '');
-  // 정확히 일치하는 코드 먼저 찾기
   for (const l of LANGS) {
-    // 파일명이 언어코드와 정확히 같거나 (ko.srt)
-    // 언어코드로 시작하거나 (ko_subtitle.srt, ko-subtitle.srt)
-    // 언어코드로 끝나는 경우 (subtitle_ko.srt)
     const c = l.code.toLowerCase();
     if (name === c) return l.code;
     if (name.startsWith(c + '_') || name.startsWith(c + '-')) return l.code;
     if (name.endsWith('_' + c) || name.endsWith('-' + c)) return l.code;
-    // 파일명 중간에 있는 경우 (video_ko_subtitle.srt)
     if (name.includes('_' + c + '_') || name.includes('-' + c + '-')) return l.code;
-    // zh-hans 특수 처리
     if (c === 'zh' && (name.includes('zh') || name.includes('chinese') || name.includes('hans'))) return l.code;
   }
   return null;
 }
 
-// ─────────────────────────────────────────
-// ZIP 업로드
-// ─────────────────────────────────────────
 async function onZip(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -377,7 +372,7 @@ async function onZip(e) {
     let matched = 0, unmatched = [];
     for (const [fname, zipEntry] of Object.entries(zip.files)) {
       if (zipEntry.dir || !fname.toLowerCase().endsWith('.srt')) continue;
-      const baseName = fname.split('/').pop(); // 폴더 안에 있어도 처리
+      const baseName = fname.split('/').pop();
       const code = detectLang(baseName);
       const content = await zipEntry.async('string');
       if (code) {
@@ -398,12 +393,9 @@ async function onZip(e) {
   } catch(err) {
     alert('ZIP 파일 처리 실패: ' + err.message);
   }
-  e.target.value = ''; // 같은 파일 재업로드 허용
+  e.target.value = '';
 }
 
-// ─────────────────────────────────────────
-// SRT 여러 개 한번에
-// ─────────────────────────────────────────
 function onBulkSrt(e) {
   const files = Array.from(e.target.files);
   let matched = 0, unmatched = [];
@@ -573,11 +565,9 @@ async function retryLang(code) {
   if (!S.token) return alert('YouTube 토큰이 만료됐을 수 있어요. STEP 1에서 다시 연동해주세요.');
   const lang = LANGS.find(l => l.code === code);
   if (!lang || !S.srts[code]) return alert('SRT 파일이 없어요. STEP 3에서 다시 파일을 선택해주세요.');
-
   const btn = event.target;
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>';
-
   try {
     const bd = '-------314159265358979323846';
     const dl = '\r\n--' + bd + '\r\n';
@@ -590,8 +580,6 @@ async function retryLang(code) {
       { method:'POST', headers:{ Authorization:'Bearer '+S.token, 'Content-Type':'multipart/related; boundary="'+bd+'"' }, body }
     );
     if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || res.statusText); }
-
-    // 성공 처리
     const idx = S.results.findIndex(r => r.lang === code);
     if (idx !== -1) S.results[idx] = {lang:code, name:lang.name, status:'success'};
     renderReport();
