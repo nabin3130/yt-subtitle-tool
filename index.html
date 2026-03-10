@@ -38,7 +38,6 @@
   .btn-p{background:var(--accent);color:#000;}
   .btn-d{background:var(--accent2);color:#fff;}
   .btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
-  .ibox{background:rgba(68,136,255,.08);border:1px solid rgba(68,136,255,.2);border-radius:8px;padding:16px;font-size:13px;color:var(--accent3);line-height:1.7;margin:16px 0;}
   .lrow{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;}
   .lcode{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;background:rgba(68,136,255,.15);color:var(--accent3);padding:3px 8px;border-radius:4px;width:50px;text-align:center;}
   .lname{font-size:13px;color:var(--muted);width:100px;}
@@ -88,15 +87,11 @@
 
     <div class="panel" id="panel-upload">
       <div class="ptitle">// SUBTITLE_UPLOAD</div>
-      <div class="pdesc">SRT 파일을 선택하세요. (ZIP 또는 개별 파일)</div>
-      
+      <div class="pdesc">SRT 파일을 선택하세요.</div>
       <div style="display:flex;gap:12px;margin-bottom:20px;">
-        <label class="btn btn-s"><input type="file" accept=".zip" style="display:none" onchange="onZip(event)"/>📦 ZIP 업로드</label>
-        <label class="btn btn-s"><input type="file" accept=".srt" multiple style="display:none" onchange="onBulkSrt(event)"/>📂 SRT 여러개</label>
+        <label class="btn btn-s"><input type="file" accept=".srt" multiple style="display:none" onchange="onBulkSrt(event)"/>📂 SRT 파일 선택</label>
       </div>
-
       <div id="lang-list"></div>
-      
       <div class="pbwrap"><div class="pbfill" id="upload-progress"></div></div>
       <button class="btn btn-d" style="width:100%; justify-content:center; margin-top:20px;" onclick="confirmUpload()" id="btn-upload">🚀 YouTube 자동 업로드 시작</button>
     </div>
@@ -105,11 +100,11 @@
 
 <div class="mbg" id="modal">
   <div class="modal">
-    <div class="mtitle" style="color:var(--accent)">Final Confirmation</div>
-    <div class="mbody" id="modal-body" style="color:var(--text); white-space:pre-line;"></div>
+    <div class="mtitle" style="color:var(--accent)">최종 확인</div>
+    <div class="mbody" id="modal-body" style="color:var(--text); white-space:pre-line; margin-bottom:20px;"></div>
     <div style="display:flex; gap:12px; justify-content:flex-end;">
       <button class="btn btn-s" onclick="closeModal()">취소</button>
-      <button class="btn btn-p" onclick="doUpload()">확인, 지금 업로드</button>
+      <button class="btn btn-p" onclick="doUpload()">확인, 업로드 시작</button>
     </div>
   </div>
 </div>
@@ -149,6 +144,7 @@ function buildList() {
 
 function onFile(e, code) {
   const f = e.target.files[0];
+  if(!f) return;
   const r = new FileReader();
   r.onload = ev => {
     S.srts[code] = ev.target.result;
@@ -158,10 +154,70 @@ function onFile(e, code) {
   r.readAsText(f);
 }
 
-function onZip(e) { /* ZIP 처리 생략/기존동일 */ alert('개별 SRT 파일을 선택해주세요!'); }
-function onBulkSrt(e) { alert('개별 파일 옆의 아이콘을 눌러주세요!'); }
+function onBulkSrt(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(f => {
+    const name = f.name.toLowerCase();
+    const target = LANGS.find(l => name.includes(l.code));
+    if(target) {
+      const r = new FileReader();
+      r.onload = ev => {
+        S.srts[target.code] = ev.target.result;
+        document.getElementById('fn-' + target.code).textContent = f.name;
+        document.getElementById('fn-' + target.code).style.color = 'var(--accent)';
+      };
+      r.readAsText(f);
+    }
+  });
+}
 
 function confirmUpload() {
   const n = Object.keys(S.srts).length;
   if (n === 0) return alert('자막 파일을 선택하세요.');
-  document.getElementById('modal
+  document.getElementById('modal-body').innerText = `영상 ID: ${S.videoId}\n언어 개수: ${n}개\n\n전송을 시작하시겠습니까?`;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+async function doUpload() {
+  // ★ 여기에 아까 복사한 GAS Web App URL을 넣으세요 ★
+  const gasUrl = "https://script.google.com/macros/s/AKfycbxdPAaLIQ3wZNC119YXuK6jod2WEfURGc8PVTagsX0kiJYuxLiKmYgk0ebwQh2wZKLmnw/exec"; 
+  
+  if (gasUrl.includes("여기에")) return alert("GAS 주소를 먼저 입력해주세요!");
+
+  const mainTitle = prompt("🎬 모든 언어의 기준이 될 '영어 제목'을 입력하세요:");
+  if (!mainTitle) return;
+  const mainDesc = prompt("📝 모든 언어의 기준이 될 '영어 설명'을 입력하세요:");
+
+  const btn = document.getElementById('btn-upload');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> 구글 서버로 전송 중...';
+  closeModal();
+
+  try {
+    await fetch(gasUrl, {
+      method: "POST",
+      mode: "no-cors",
+      cache: "no-cache",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        videoId: S.videoId,
+        subtitles: S.srts,
+        mainTitle: mainTitle,
+        mainDesc: mainDesc
+      })
+    });
+
+    alert("🚀 전송 완료! 1분 뒤 유튜브 스튜디오를 확인하세요.");
+    btn.innerHTML = "✅ 전송 성공";
+    btn.style.background = "var(--success)";
+  } catch (err) {
+    alert("❌ 에러: " + err.message);
+    btn.disabled = false;
+    btn.innerHTML = "🚀 다시 시도";
+  }
+}
+</script>
+</body>
+</html>
