@@ -478,7 +478,7 @@ function closeModal() { document.getElementById('modal').classList.remove('open'
 
 async function doUpload() {
   // 1. [중요] 주소 끝이 반드시 /exec 로 끝나야 합니다!
-  const gasUrl = "여기에_GAS_주소를_넣으세요"; 
+  const gasUrl = "https://script.google.com/macros/s/AKfycbxdPAaLIQ3wZNC119YXuK6jod2WEfURGc8PVTagsX0kiJYuxLiKmYgk0ebwQh2wZKLmnw/exec"; 
   
   if (!S.videoId) return alert("영상 ID를 입력해주세요.");
   if (Object.keys(S.srts).length === 0) return alert("자막 파일이 없습니다.");
