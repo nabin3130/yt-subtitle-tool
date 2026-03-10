@@ -187,6 +187,7 @@
           <span class="btn btn-s" style="display:inline-flex;align-items:center;gap:8px;">📂 SRT 여러 개 한번에 선택</span>
         </label>
         <button class="btn btn-s" onclick="clearAll()" style="color:var(--error);border-color:var(--error);">🗑 전체 초기화</button>
+        <button class="btn btn-s" onclick="copyForColab()" style="background:var(--accent3); color:white;">📋 코랩용 데이터 복사</button>
       </div>
 
       <div class="ibox" style="margin-bottom:16px;">
@@ -233,6 +234,26 @@
 </div>
 
 <script>
+  function copyForColab() {
+  const n = Object.keys(S.srts).length;
+  if (n === 0) return alert('먼저 자막 파일(SRT)들을 업로드하거나 선택해주세요.');
+
+  // 코랩이 읽기 편하도록 데이터를 뭉칩니다.
+  const colabData = {
+    videoId: S.videoId || "비디오ID를입력하세요",
+    subtitles: S.srts
+  };
+
+  const jsonStr = JSON.stringify(colabData);
+  
+  // 클립보드에 복사
+  navigator.clipboard.writeText(jsonStr).then(() => {
+    alert(`✅ ${n}개의 자막 데이터가 복사되었습니다!\n이제 구글 코랩에 붙여넣으세요.`);
+  }).catch(err => {
+    console.error('복사 실패:', err);
+    alert('복사에 실패했습니다. 콘솔을 확인해주세요.');
+  });
+}
 const LANGS = [
   {code:'ko', name:'한국어',       yt:'ko'},
   {code:'zh', name:'중국어 간체',  yt:'zh-Hans'},
