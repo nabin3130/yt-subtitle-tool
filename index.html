@@ -206,6 +206,7 @@
 <script>
 const CLIENT_ID = '692428333826-f6hcbspefcb836e0tfmve22l2905pu4i.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/youtube.force-ssl';
+const WORKER_URL = 'https://yt-caption-proxy.kimnabin01.workers.dev';
 
 // State
 let accessToken = null;
@@ -499,21 +500,21 @@ async function startUpload() {
 }
 
 async function uploadCaption(videoId, lang, srtText) {
-  // 1. 기존 자막 목록 조회
+  // 1. 기존 자막 목록 조회 (Worker 경유)
   const listRes = await fetch(
-    `https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}`,
-    { headers: { 'Authorization': 'Bearer ' + accessToken } }
+    `${WORKER_URL}/captions/list?videoId=${videoId}`,
+    { headers: { 'X-Token': accessToken } }
   );
   if (listRes.ok) {
     const listData = await listRes.json();
     const existing = (listData.items || []).filter(item =>
       item.snippet.language === lang && item.snippet.name === `Sub_${lang}`
     );
-    // 2. 같은 언어+이름 자막 삭제
+    // 2. 기존 자막 삭제 (Worker 경유)
     for (const cap of existing) {
       await fetch(
-        `https://www.googleapis.com/youtube/v3/captions?id=${cap.id}`,
-        { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + accessToken } }
+        `${WORKER_URL}/captions/delete?id=${cap.id}`,
+        { method: 'DELETE', headers: { 'X-Token': accessToken } }
       );
       await sleep(200);
     }
@@ -527,10 +528,10 @@ async function uploadCaption(videoId, lang, srtText) {
   const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n${srtText}\r\n--${boundary}--`;
 
   const res = await fetch(
-    'https://www.googleapis.com/upload/youtube/v3/captions?uploadType=multipart&part=snippet',
+    `${WORKER_URL}/captions/upload`,
     {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
+      headers: { 'X-Token': accessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
       body
     }
   );
