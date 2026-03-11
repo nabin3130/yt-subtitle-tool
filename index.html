@@ -4,226 +4,886 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YT 자막 업로더</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
   :root {
-    --bg:#0a0a0f; --surface:#111118; --surface2:#1a1a24; --border:#2a2a3a;
-    --accent:#00ff88; --accent2:#ff3366; --accent3:#4488ff;
-    --text:#e8e8f0; --muted:#666680; --success:#00cc66; --error:#ff4455; --warn:#ffaa00;
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #222222;
+    --accent: #ff0000;
+    --accent2: #ff4444;
+    --text: #f0f0f0;
+    --muted: #666666;
+    --success: #00ff88;
+    --warning: #ffaa00;
+    --error: #ff4444;
   }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-weight:300;min-height:100vh;}
-  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;}
-  .logo{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--accent);}
-  .sub{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
-  .hstatus{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;font-family:'Space Mono',monospace;}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:background .3s;}
-  .dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent);}
-  .main{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 57px);}
-  .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 0;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto;}
-  .slabel{font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;padding:0 24px;}
-  .ssec{padding:8px 24px;margin-bottom:4px;}
-  .sbtn{width:100%;background:none;border:none;color:var(--muted);text-align:left;padding:10px 12px;border-radius:8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:13px;display:flex;align-items:center;gap:10px;transition:all .2s;}
-  .sbtn:hover{background:var(--surface2);color:var(--text);}
-  .sbtn.active{background:var(--surface2);color:var(--accent);border-left:2px solid var(--accent);}
-  .content{padding:32px 40px;max-width:860px;}
-  .panel{display:none;} .panel.active{display:block;}
-  .ptitle{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);margin-bottom:6px;}
-  .pdesc{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.6;}
-  .fg{margin-bottom:20px;}
-  label{display:block;font-size:12px;font-family:'Space Mono',monospace;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
-  input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:8px;font-size:14px;font-family:'Space Mono',monospace;outline:none;}
-  .btn{padding:12px 24px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-family:'Noto Sans KR',sans-serif;font-weight:700;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
-  .btn-p{background:var(--accent);color:#000;}
-  .btn-d{background:var(--accent2);color:#fff;}
-  .btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
-  .lrow{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;}
-  .lcode{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;background:rgba(68,136,255,.15);color:var(--accent3);padding:3px 8px;border-radius:4px;width:50px;text-align:center;}
-  .lname{font-size:13px;color:var(--muted);width:100px;}
-  .lfile{flex:1;}
-  .fbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;}
-  .pbwrap{background:var(--surface2);border-radius:4px;height:6px;margin:12px 0;overflow:hidden;}
-  .pbfill{height:100%;background:var(--accent);width:0%;transition:width .5s;}
-  .mbg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:999;}
-  .mbg.open{display:flex;}
-  .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:480px;width:90%;}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,0,0,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .header-text p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .header-right {
+    margin-left: auto;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: #333; }
+
+  .card-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .step-badge {
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .step-badge.done {
+    background: var(--success);
+    color: #000;
+  }
+
+  /* Login button */
+  .btn-google {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    color: #333;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .btn-google:hover {
+    background: #f5f5f5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(255,255,255,0.1);
+  }
+
+  .btn-google svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  /* User info */
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(0,255,136,0.05);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 8px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .user-name { font-size: 14px; font-weight: 600; }
+  .user-email { font-size: 12px; color: var(--muted); }
+
+  .btn-logout {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .btn-logout:hover { border-color: var(--error); color: var(--error); }
+
+  /* Input */
+  .input-group { margin-bottom: 16px; }
+
+  .input-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .input {
+    width: 100%;
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Space Mono', monospace;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  .input:focus { border-color: var(--accent); }
+  .input::placeholder { color: var(--muted); }
+
+  /* File upload */
+  .file-drop {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .file-drop:hover, .file-drop.dragover {
+    border-color: var(--accent);
+    background: rgba(255,0,0,0.03);
+  }
+
+  .file-drop input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .file-icon { font-size: 32px; margin-bottom: 8px; }
+  .file-label { font-size: 14px; color: var(--muted); }
+  .file-name { font-size: 13px; color: var(--success); margin-top: 8px; font-family: 'Space Mono', monospace; }
+
+  /* Language selector */
+  .lang-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .lang-grid::-webkit-scrollbar { width: 4px; }
+  .lang-grid::-webkit-scrollbar-track { background: transparent; }
+  .lang-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .lang-chip {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .lang-chip:hover { border-color: #444; color: var(--text); }
+  .lang-chip.selected { border-color: var(--accent); color: var(--accent); background: rgba(255,0,0,0.05); }
+
+  .lang-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-sm {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+  /* Upload button */
+  .btn-upload {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+    margin-top: 8px;
+  }
+
+  .btn-upload:hover:not(:disabled) {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(255,0,0,0.3);
+  }
+
+  .btn-upload:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* Progress */
+  .progress-wrap {
+    margin-top: 16px;
+  }
+
+  .progress-bar-bg {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+
+  .progress-text {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Log */
+  .log-wrap {
+    margin-top: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #050505;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .log-wrap::-webkit-scrollbar { width: 4px; }
+  .log-wrap::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .log-line {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 2px 0;
+    display: flex;
+    gap: 8px;
+  }
+
+  .log-line .time { color: var(--muted); flex-shrink: 0; }
+  .log-line.ok .msg { color: var(--success); }
+  .log-line.err .msg { color: var(--error); }
+  .log-line.info .msg { color: var(--text); }
+  .log-line.warn .msg { color: var(--warning); }
+
+  /* Hidden */
+  .hidden { display: none !important; }
+
+  /* Disabled card */
+  .card.disabled { opacity: 0.4; pointer-events: none; }
+
+  /* Result summary */
+  .result-summary {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .result-stat {
+    flex: 1;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .result-stat.success { background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.2); }
+  .result-stat.error { background: rgba(255,68,68,0.05); border: 1px solid rgba(255,68,68,0.2); }
+
+  .result-stat .num { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; }
+  .result-stat.success .num { color: var(--success); }
+  .result-stat.error .num { color: var(--error); }
+  .result-stat .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .pulsing { animation: pulse 1.5s infinite; }
 </style>
 </head>
 <body>
+<div class="container">
 
-<div class="header">
-  <div>
-    <div class="logo">YT_AUTO//</div>
-    <div class="sub">YouTube Shorts 자막 업로더</div>
-  </div>
-  <div class="hstatus">
-    <div class="dot on" id="dot-yt"></div>
-    <span id="lbl-yt" style="color:var(--accent)">System Ready</span>
-  </div>
-</div>
-
-<div class="main">
-  <div class="sidebar">
-    <div class="ssec">
-      <div class="slabel">작업</div>
-      <button class="sbtn active" onclick="go('input')" id="nav-input">영상 정보 입력</button>
-      <button class="sbtn" onclick="go('upload')" id="nav-upload">자막 업로드</button>
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">YT</div>
+    <div class="header-text">
+      <h1>자막 업로더</h1>
+      <p>YouTube 다국어 자막 자동 업로드</p>
     </div>
+    <div class="header-right" id="headerUserArea"></div>
   </div>
 
-  <div class="content">
-    <div class="panel active" id="panel-input">
-      <div class="ptitle">// VIDEO_ID_INPUT</div>
-      <div class="pdesc">업로드할 YouTube 영상 ID를 입력하세요.</div>
-      <div class="fg">
-        <label>YouTube Video ID</label>
-        <input type="text" id="video-id" placeholder="예: dQw4w9WgXcQ" />
+  <!-- Step 1: Login -->
+  <div class="card" id="cardLogin">
+    <div class="card-title">
+      <div class="step-badge" id="badge1">1</div>
+      YouTube 계정 연결
+    </div>
+    <div id="loginArea">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        본인의 YouTube 채널에 자막을 업로드하려면 Google 계정으로 로그인하세요.
+      </p>
+      <button class="btn-google" onclick="handleLogin()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Google 계정으로 로그인
+      </button>
+    </div>
+    <div id="loggedInArea" class="hidden">
+      <div class="user-info">
+        <div class="user-avatar"><img id="userAvatar" src="" alt=""></div>
+        <div>
+          <div class="user-name" id="userName"></div>
+          <div class="user-email" id="userEmail"></div>
+        </div>
+        <button class="btn-logout" onclick="handleLogout()">로그아웃</button>
       </div>
-      <button class="btn btn-p" onclick="goToUpload()">다음 단계: 파일 선택 →</button>
     </div>
+  </div>
 
-    <div class="panel" id="panel-upload">
-      <div class="ptitle">// SUBTITLE_UPLOAD</div>
-      <div class="pdesc">SRT 파일을 선택하세요.</div>
-      <div style="display:flex;gap:12px;margin-bottom:20px;">
-        <label class="btn btn-s"><input type="file" accept=".srt" multiple style="display:none" onchange="onBulkSrt(event)"/>📂 SRT 파일 선택</label>
+  <!-- Step 2: Video ID -->
+  <div class="card disabled" id="cardVideo">
+    <div class="card-title">
+      <div class="step-badge" id="badge2">2</div>
+      영상 ID 입력
+    </div>
+    <div class="input-group">
+      <label class="input-label">YOUTUBE VIDEO ID</label>
+      <input class="input" id="videoId" placeholder="예: dQw4w9WgXcQ" oninput="onVideoIdChange()">
+    </div>
+    <p style="font-size:12px;color:var(--muted);">
+      영상 URL에서 <code style="background:#1a1a1a;padding:2px 6px;border-radius:4px;">v=</code> 뒤의 값이에요.
+      예: youtube.com/watch?v=<strong style="color:var(--accent)">dQw4w9WgXcQ</strong>
+    </p>
+  </div>
+
+  <!-- Step 3: SRT Upload -->
+  <div class="card disabled" id="cardSrt">
+    <div class="card-title">
+      <div class="step-badge" id="badge3">3</div>
+      SRT 파일 업로드
+    </div>
+    <div class="file-drop" id="fileDrop" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <input type="file" accept=".srt" onchange="onFileSelect(event)">
+      <div class="file-icon">📄</div>
+      <div class="file-label">SRT 파일을 드래그하거나 클릭해서 선택</div>
+      <div class="file-name hidden" id="fileName"></div>
+    </div>
+  </div>
+
+  <!-- Step 4: Language -->
+  <div class="card disabled" id="cardLang">
+    <div class="card-title">
+      <div class="step-badge" id="badge4">4</div>
+      업로드할 언어 선택
+    </div>
+    <div class="lang-controls">
+      <button class="btn-sm active" onclick="selectPreset('top10')">TOP 10</button>
+      <button class="btn-sm" onclick="selectPreset('top30')">TOP 30</button>
+      <button class="btn-sm" onclick="selectPreset('all')">전체 (109개)</button>
+      <button class="btn-sm" onclick="clearAll()">전체 해제</button>
+    </div>
+    <div class="lang-grid" id="langGrid"></div>
+    <p style="font-size:12px;color:var(--muted);margin-top:12px;">
+      선택된 언어: <strong style="color:var(--text)" id="selectedCount">0</strong>개
+    </p>
+  </div>
+
+  <!-- Step 5: Upload -->
+  <div class="card disabled" id="cardUpload">
+    <div class="card-title">
+      <div class="step-badge" id="badge5">5</div>
+      업로드 시작
+    </div>
+    <button class="btn-upload" id="btnUpload" onclick="startUpload()" disabled>
+      🚀 자막 업로드 시작
+    </button>
+    <div class="progress-wrap hidden" id="progressWrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar" id="progressBar"></div>
       </div>
-      <div id="lang-list"></div>
-      <div class="pbwrap"><div class="pbfill" id="upload-progress"></div></div>
-      <button class="btn btn-d" style="width:100%; justify-content:center; margin-top:20px;" onclick="confirmUpload()" id="btn-upload">🚀 YouTube 자동 업로드 시작</button>
+      <div class="progress-text" id="progressText">준비 중...</div>
+    </div>
+    <div class="log-wrap hidden" id="logWrap"></div>
+    <div class="result-summary hidden" id="resultSummary">
+      <div class="result-stat success">
+        <div class="num" id="successCount">0</div>
+        <div class="label">성공</div>
+      </div>
+      <div class="result-stat error">
+        <div class="num" id="errorCount">0</div>
+        <div class="label">실패</div>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="mbg" id="modal">
-  <div class="modal">
-    <div class="mtitle" style="color:var(--accent)">최종 확인</div>
-    <div class="mbody" id="modal-body" style="color:var(--text); white-space:pre-line; margin-bottom:20px;"></div>
-    <div style="display:flex; gap:12px; justify-content:flex-end;">
-      <button class="btn btn-s" onclick="closeModal()">취소</button>
-      <button class="btn btn-p" onclick="doUpload()">확인, 업로드 시작</button>
-    </div>
-  </div>
 </div>
 
 <script>
-const LANGS = [
-  {code:'ko', name:'한국어'}, 
-  {code:'en', name:'영어'}, 
-  {code:'ja', name:'일본어'}, 
-  {code:'zh', name:'중국어(간체)'},
-  {code:'es', name:'스페인어'}, 
-  {code:'ru', name:'러시아어'}, 
-  {code:'fr', name:'프랑스어'},
-  {code:'de', name:'독일어'},
-  {code:'vi', name:'베트남어'}
+// ========== CONFIG ==========
+const CLIENT_ID = '692428333826-f6hcbspefcb836e0tfmve22l2905pu4i.apps.googleusercontent.com';
+const BACKEND_URL = 'https://yt-subtitle-backend.vercel.app'; // Vercel 배포 후 변경
+const SCOPES = 'https://www.googleapis.com/auth/youtube.force-ssl';
+
+// ========== LANGUAGES ==========
+const LANGUAGES = [
+  {code:'af',name:'Afrikaans'},{code:'sq',name:'Albanian'},{code:'am',name:'Amharic'},
+  {code:'ar',name:'Arabic'},{code:'hy',name:'Armenian'},{code:'az',name:'Azerbaijani'},
+  {code:'eu',name:'Basque'},{code:'be',name:'Belarusian'},{code:'bn',name:'Bengali'},
+  {code:'bs',name:'Bosnian'},{code:'bg',name:'Bulgarian'},{code:'ca',name:'Catalan'},
+  {code:'ceb',name:'Cebuano'},{code:'zh-Hans',name:'Chinese (Simplified)'},
+  {code:'zh-Hant',name:'Chinese (Traditional)'},{code:'co',name:'Corsican'},
+  {code:'hr',name:'Croatian'},{code:'cs',name:'Czech'},{code:'da',name:'Danish'},
+  {code:'nl',name:'Dutch'},{code:'en',name:'English'},{code:'eo',name:'Esperanto'},
+  {code:'et',name:'Estonian'},{code:'fi',name:'Finnish'},{code:'fr',name:'French'},
+  {code:'fy',name:'Frisian'},{code:'gl',name:'Galician'},{code:'ka',name:'Georgian'},
+  {code:'de',name:'German'},{code:'el',name:'Greek'},{code:'gu',name:'Gujarati'},
+  {code:'ht',name:'Haitian Creole'},{code:'ha',name:'Hausa'},{code:'haw',name:'Hawaiian'},
+  {code:'he',name:'Hebrew'},{code:'hi',name:'Hindi'},{code:'hmn',name:'Hmong'},
+  {code:'hu',name:'Hungarian'},{code:'is',name:'Icelandic'},{code:'ig',name:'Igbo'},
+  {code:'id',name:'Indonesian'},{code:'ga',name:'Irish'},{code:'it',name:'Italian'},
+  {code:'ja',name:'Japanese'},{code:'jv',name:'Javanese'},{code:'kn',name:'Kannada'},
+  {code:'kk',name:'Kazakh'},{code:'km',name:'Khmer'},{code:'rw',name:'Kinyarwanda'},
+  {code:'ko',name:'Korean'},{code:'ku',name:'Kurdish'},{code:'ky',name:'Kyrgyz'},
+  {code:'lo',name:'Lao'},{code:'la',name:'Latin'},{code:'lv',name:'Latvian'},
+  {code:'lt',name:'Lithuanian'},{code:'lb',name:'Luxembourgish'},{code:'mk',name:'Macedonian'},
+  {code:'mg',name:'Malagasy'},{code:'ms',name:'Malay'},{code:'ml',name:'Malayalam'},
+  {code:'mt',name:'Maltese'},{code:'mi',name:'Maori'},{code:'mr',name:'Marathi'},
+  {code:'mn',name:'Mongolian'},{code:'my',name:'Myanmar (Burmese)'},{code:'ne',name:'Nepali'},
+  {code:'no',name:'Norwegian'},{code:'ny',name:'Nyanja (Chichewa)'},{code:'or',name:'Odia (Oriya)'},
+  {code:'ps',name:'Pashto'},{code:'fa',name:'Persian'},{code:'pl',name:'Polish'},
+  {code:'pt',name:'Portuguese'},{code:'pa',name:'Punjabi'},{code:'ro',name:'Romanian'},
+  {code:'ru',name:'Russian'},{code:'sm',name:'Samoan'},{code:'gd',name:'Scots Gaelic'},
+  {code:'sr',name:'Serbian'},{code:'st',name:'Sesotho'},{code:'sn',name:'Shona'},
+  {code:'sd',name:'Sindhi'},{code:'si',name:'Sinhala'},{code:'sk',name:'Slovak'},
+  {code:'sl',name:'Slovenian'},{code:'so',name:'Somali'},{code:'es',name:'Spanish'},
+  {code:'su',name:'Sundanese'},{code:'sw',name:'Swahili'},{code:'sv',name:'Swedish'},
+  {code:'tl',name:'Tagalog (Filipino)'},{code:'tg',name:'Tajik'},{code:'ta',name:'Tamil'},
+  {code:'tt',name:'Tatar'},{code:'te',name:'Telugu'},{code:'th',name:'Thai'},
+  {code:'tr',name:'Turkish'},{code:'tk',name:'Turkmen'},{code:'uk',name:'Ukrainian'},
+  {code:'ur',name:'Urdu'},{code:'ug',name:'Uyghur'},{code:'uz',name:'Uzbek'},
+  {code:'vi',name:'Vietnamese'},{code:'cy',name:'Welsh'},{code:'xh',name:'Xhosa'},
+  {code:'yi',name:'Yiddish'},{code:'yo',name:'Yoruba'},{code:'zu',name:'Zulu'}
 ];
 
-const S = { videoId: '', srts: {} };
+const TOP10 = ['en','ja','zh-Hans','es','pt','hi','ar','fr','de','id'];
+const TOP30 = [...TOP10,'ko','ru','tr','it','pl','nl','vi','th','ms','uk','ro','cs','sv','hu','fi','da','no','el','he','fa'];
 
-function go(name) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
-}
+// ========== STATE ==========
+let accessToken = null;
+let userInfo = null;
+let srtContent = null;
+let selectedLangs = new Set(TOP10);
 
-function goToUpload() {
-  const v = document.getElementById('video-id').value.trim();
-  if (!v) return alert('Video ID를 입력하세요.');
-  S.videoId = v;
-  buildList();
-  go('upload');
-}
+// ========== INIT ==========
+window.onload = () => {
+  buildLangGrid();
+  updateLangCount();
+  loadGoogleApi();
+};
 
-function buildList() {
-  document.getElementById('lang-list').innerHTML = LANGS.map(l => `
-    <div class="lrow" id="row-${l.code}">
-      <span class="lcode">${l.code.toUpperCase()}</span>
-      <span class="lname">${l.name}</span>
-      <div class="lfile"><span class="fname" id="fn-${l.code}" style="font-size:11px; color:var(--muted)">대기 중</span></div>
-      <label class="fbtn">📁<input type="file" style="display:none" onchange="onFile(event,'${l.code}')"></label>
-    </div>
-  `).join('');
-}
-
-function onFile(e, code) {
-  const f = e.target.files[0];
-  if(!f) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    S.srts[code] = ev.target.result;
-    document.getElementById('fn-' + code).textContent = f.name;
-    document.getElementById('fn-' + code).style.color = 'var(--accent)';
+function loadGoogleApi() {
+  const script = document.createElement('script');
+  script.src = 'https://accounts.google.com/gsi/client';
+  script.async = true;
+  script.defer = true;
+  script.onload = () => {
+    // 스크립트 로드 후 약간 대기
+    setTimeout(initGoogleAuth, 300);
   };
-  r.readAsText(f);
+  document.head.appendChild(script);
 }
 
-function onBulkSrt(e) {
-  const files = Array.from(e.target.files);
-  files.forEach(f => {
-    const name = f.name.toLowerCase();
-    const target = LANGS.find(l => name.includes(l.code));
-    if(target) {
-      const r = new FileReader();
-      r.onload = ev => {
-        S.srts[target.code] = ev.target.result;
-        document.getElementById('fn-' + target.code).textContent = f.name;
-        document.getElementById('fn-' + target.code).style.color = 'var(--accent)';
-      };
-      r.readAsText(f);
-    }
+function initGoogleAuth() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    setTimeout(initGoogleAuth, 300);
+    return;
+  }
+  window.tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: onTokenResponse,
   });
 }
 
-function confirmUpload() {
-  const n = Object.keys(S.srts).length;
-  if (n === 0) return alert('자막 파일을 선택하세요.');
-  document.getElementById('modal-body').innerText = `영상 ID: ${S.videoId}\n언어 개수: ${n}개\n\n전송을 시작하시겠습니까?`;
-  document.getElementById('modal').classList.add('open');
-}
-
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
-
-async function doUpload() {
-  // ★ 여기에 아까 복사한 GAS Web App URL을 넣으세요 ★
-  const gasUrl = "https://script.google.com/macros/s/AKfycbxdPAaLIQ3wZNC119YXuK6jod2WEfURGc8PVTagsX0kiJYuxLiKmYgk0ebwQh2wZKLmnw/exec"; 
-  
-  if (gasUrl.includes("여기에")) return alert("GAS 주소를 먼저 입력해주세요!");
-
-  const mainTitle = prompt("🎬 모든 언어의 기준이 될 '영어 제목'을 입력하세요:");
-  if (!mainTitle) return;
-  const mainDesc = prompt("📝 모든 언어의 기준이 될 '영어 설명'을 입력하세요:");
-
-  const btn = document.getElementById('btn-upload');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span> 구글 서버로 전송 중...';
-  closeModal();
-
-  try {
-    await fetch(gasUrl, {
-      method: "POST",
-      mode: "no-cors",
-      cache: "no-cache",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({
-        videoId: S.videoId,
-        subtitles: S.srts,
-        mainTitle: mainTitle,
-        mainDesc: mainDesc
-      })
-    });
-
-    alert("🚀 전송 완료! 1분 뒤 유튜브 스튜디오를 확인하세요.");
-    btn.innerHTML = "✅ 전송 성공";
-    btn.style.background = "var(--success)";
-  } catch (err) {
-    alert("❌ 에러: " + err.message);
-    btn.disabled = false;
-    btn.innerHTML = "🚀 다시 시도";
+// ========== AUTH ==========
+function handleLogin() {
+  if (!window.tokenClient) {
+    alert('Google 인증 초기화 중이에요. 잠깐 후 다시 눌러주세요!');
+    loadGoogleApi();
+    return;
   }
+  window.tokenClient.requestAccessToken();
 }
+
+async function onTokenResponse(resp) {
+  if (resp.error) { addLog('로그인 실패: ' + resp.error, 'err'); return; }
+  accessToken = resp.access_token;
+
+  // Fetch user info
+  const r = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: { Authorization: 'Bearer ' + accessToken }
+  });
+  userInfo = await r.json();
+
+  showLoggedIn();
+}
+
+function showLoggedIn() {
+  document.getElementById('loginArea').classList.add('hidden');
+  document.getElementById('loggedInArea').classList.remove('hidden');
+  document.getElementById('userName').textContent = userInfo.name;
+  document.getElementById('userEmail').textContent = userInfo.email;
+  if (userInfo.picture) document.getElementById('userAvatar').src = userInfo.picture;
+  document.getElementById('badge1').textContent = '✓';
+  document.getElementById('badge1').classList.add('done');
+
+  // Enable next steps
+  document.getElementById('cardVideo').classList.remove('disabled');
+  document.getElementById('cardSrt').classList.remove('disabled');
+  document.getElementById('cardLang').classList.remove('disabled');
+  document.getElementById('cardUpload').classList.remove('disabled');
+
+  checkUploadReady();
+}
+
+function handleLogout() {
+  google.accounts.oauth2.revoke(accessToken, () => {});
+  accessToken = null;
+  userInfo = null;
+  document.getElementById('loginArea').classList.remove('hidden');
+  document.getElementById('loggedInArea').classList.add('hidden');
+  document.getElementById('badge1').textContent = '1';
+  document.getElementById('badge1').classList.remove('done');
+  ['cardVideo','cardSrt','cardLang','cardUpload'].forEach(id => {
+    document.getElementById(id).classList.add('disabled');
+  });
+  document.getElementById('btnUpload').disabled = true;
+}
+
+// ========== VIDEO ID ==========
+function onVideoIdChange() {
+  const val = document.getElementById('videoId').value.trim();
+  // Auto-extract from URL
+  const match = val.match(/[?&]v=([^&]+)/);
+  if (match) document.getElementById('videoId').value = match[1];
+  checkUploadReady();
+}
+
+// ========== FILE ==========
+function onFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) loadSrt(file);
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('fileDrop').classList.add('dragover');
+}
+
+function onDragLeave(e) {
+  document.getElementById('fileDrop').classList.remove('dragover');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('fileDrop').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.srt')) loadSrt(file);
+}
+
+function loadSrt(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    srtContent = e.target.result;
+    document.getElementById('fileName').textContent = '✓ ' + file.name;
+    document.getElementById('fileName').classList.remove('hidden');
+    document.getElementById('badge3').textContent = '✓';
+    document.getElementById('badge3').classList.add('done');
+    checkUploadReady();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ========== LANGUAGES ==========
+function buildLangGrid() {
+  const grid = document.getElementById('langGrid');
+  grid.innerHTML = '';
+  LANGUAGES.forEach(lang => {
+    const chip = document.createElement('button');
+    chip.className = 'lang-chip' + (selectedLangs.has(lang.code) ? ' selected' : '');
+    chip.textContent = lang.name;
+    chip.title = lang.code;
+    chip.onclick = () => toggleLang(lang.code, chip);
+    grid.appendChild(chip);
+  });
+}
+
+function toggleLang(code, el) {
+  if (selectedLangs.has(code)) {
+    selectedLangs.delete(code);
+    el.classList.remove('selected');
+  } else {
+    selectedLangs.add(code);
+    el.classList.add('selected');
+  }
+  updateLangCount();
+  checkUploadReady();
+}
+
+function selectPreset(preset) {
+  if (preset === 'top10') { selectedLangs = new Set(TOP10); }
+  else if (preset === 'top30') { selectedLangs = new Set(TOP30); }
+  else { selectedLangs = new Set(LANGUAGES.map(l => l.code)); }
+  buildLangGrid();
+  updateLangCount();
+  checkUploadReady();
+}
+
+function clearAll() {
+  selectedLangs.clear();
+  buildLangGrid();
+  updateLangCount();
+  checkUploadReady();
+}
+
+function updateLangCount() {
+  document.getElementById('selectedCount').textContent = selectedLangs.size;
+}
+
+// ========== UPLOAD ==========
+function checkUploadReady() {
+  const ready = accessToken && document.getElementById('videoId').value.trim() && srtContent && selectedLangs.size > 0;
+  document.getElementById('btnUpload').disabled = !ready;
+}
+
+async function startUpload() {
+  const videoId = document.getElementById('videoId').value.trim();
+  const langs = [...selectedLangs];
+
+  document.getElementById('btnUpload').disabled = true;
+  document.getElementById('progressWrap').classList.remove('hidden');
+  document.getElementById('logWrap').classList.remove('hidden');
+  document.getElementById('resultSummary').classList.add('hidden');
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  addLog(`영상 ID: ${videoId} | 언어: ${langs.length}개`, 'info');
+
+  for (let i = 0; i < langs.length; i++) {
+    const lang = langs[i];
+    const pct = Math.round((i / langs.length) * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressText').textContent = `${i+1} / ${langs.length} — ${lang} 업로드 중...`;
+
+    try {
+      await uploadCaption(videoId, lang, srtContent);
+      addLog(`✓ ${lang}`, 'ok');
+      successCount++;
+    } catch(e) {
+      addLog(`✗ ${lang}: ${e.message}`, 'err');
+      errorCount++;
+    }
+
+    // Rate limit 방지
+    await sleep(300);
+  }
+
+  document.getElementById('progressBar').style.width = '100%';
+  document.getElementById('progressText').textContent = '완료!';
+
+  document.getElementById('successCount').textContent = successCount;
+  document.getElementById('errorCount').textContent = errorCount;
+  document.getElementById('resultSummary').classList.remove('hidden');
+  document.getElementById('btnUpload').disabled = false;
+
+  addLog(`--- 완료: 성공 ${successCount}개, 실패 ${errorCount}개 ---`, 'info');
+}
+
+async function uploadCaption(videoId, lang, srtText) {
+  // Multipart upload to YouTube Captions API
+  const metadata = JSON.stringify({
+    snippet: {
+      videoId: videoId,
+      language: lang,
+      name: `Sub_${lang}`,
+      isDraft: false
+    }
+  });
+
+  const boundary = 'subtitle_boundary_' + Date.now();
+  const body = [
+    `--${boundary}`,
+    'Content-Type: application/json; charset=UTF-8',
+    '',
+    metadata,
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    '',
+    srtText,
+    `--${boundary}--`
+  ].join('\r\n');
+
+  const res = await fetch(
+    'https://www.googleapis.com/upload/youtube/v3/captions?uploadType=multipart&part=snippet',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + accessToken,
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+      },
+      body: body
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+// ========== UTILS ==========
+function addLog(msg, type = 'info') {
+  const wrap = document.getElementById('logWrap');
+  const line = document.createElement('div');
+  line.className = `log-line ${type}`;
+  const now = new Date();
+  const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  line.innerHTML = `<span class="time">${time}</span><span class="msg">${msg}</span>`;
+  wrap.appendChild(line);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
 </body>
 </html>
