@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YT 자막 업로더</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
-
 <style>
   :root {
     --bg: #0a0a0a; --surface: #111; --border: #222;
@@ -46,19 +45,14 @@
   .input { width:100%; background:#0a0a0a; border:1px solid var(--border); border-radius:8px; padding:12px 16px; color:var(--text); font-size:14px; font-family:'Space Mono',monospace; transition:border-color 0.2s; outline:none; }
   .input:focus { border-color:var(--accent); }
   .input::placeholder { color:var(--muted); }
-
-  /* File upload tabs */
   .upload-tabs { display:flex; gap:8px; margin-bottom:16px; }
   .tab-btn { padding:8px 16px; border-radius:6px; font-size:12px; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); transition:all 0.2s; font-family:'Noto Sans KR',sans-serif; }
   .tab-btn.active { background:var(--accent); border-color:var(--accent); color:white; }
-
   .file-drop { border:2px dashed var(--border); border-radius:8px; padding:32px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
   .file-drop:hover, .file-drop.dragover { border-color:var(--accent); background:rgba(255,0,0,0.03); }
   .file-drop input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
   .file-icon { font-size:32px; margin-bottom:8px; }
   .file-label { font-size:14px; color:var(--muted); }
-
-  /* File list */
   .file-list { margin-top:16px; display:flex; flex-direction:column; gap:6px; max-height:200px; overflow-y:auto; }
   .file-item { display:flex; align-items:center; gap:10px; padding:8px 12px; background:#0a0a0a; border:1px solid var(--border); border-radius:6px; }
   .file-item .lang-tag { font-family:'Space Mono',monospace; font-size:11px; color:var(--accent); background:rgba(255,0,0,0.1); padding:2px 8px; border-radius:4px; flex-shrink:0; }
@@ -66,17 +60,13 @@
   .file-item .file-item-size { font-size:11px; color:var(--muted); flex-shrink:0; font-family:'Space Mono',monospace; }
   .file-item .remove-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:0 4px; flex-shrink:0; }
   .file-item .remove-btn:hover { color:var(--error); }
-
   .file-summary { margin-top:12px; padding:10px 14px; background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.15); border-radius:6px; font-size:13px; color:var(--success); font-family:'Space Mono',monospace; }
-
-  /* Lang grid - simplified when auto-detected */
   .lang-auto-notice { padding:12px 16px; background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.15); border-radius:8px; font-size:13px; color:var(--success); margin-bottom:12px; }
   .lang-chips-wrap { display:flex; flex-wrap:wrap; gap:6px; }
   .lang-chip { padding:5px 10px; border:1px solid var(--border); border-radius:6px; font-size:11px; cursor:pointer; transition:all 0.15s; background:transparent; color:var(--muted); font-family:'Noto Sans KR',sans-serif; }
   .lang-chip:hover { border-color:#444; color:var(--text); }
   .lang-chip.selected { border-color:var(--accent); color:var(--accent); background:rgba(255,0,0,0.05); }
   .lang-chip.auto { border-color:var(--success); color:var(--success); background:rgba(0,255,136,0.05); }
-
   .btn-upload { width:100%; padding:16px; background:var(--accent); border:none; border-radius:8px; color:white; font-size:15px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:'Space Mono',monospace; letter-spacing:1px; margin-top:8px; }
   .btn-upload:hover:not(:disabled) { background:var(--accent2); transform:translateY(-1px); box-shadow:0 4px 20px rgba(255,0,0,0.3); }
   .btn-upload:disabled { opacity:0.3; cursor:not-allowed; }
@@ -106,7 +96,6 @@
 </head>
 <body>
 <div class="container">
-
   <div class="header">
     <div class="logo">YT</div>
     <div class="header-text">
@@ -115,7 +104,6 @@
     </div>
   </div>
 
-  <!-- Step 1: Login -->
   <div class="card" id="cardLogin">
     <div class="card-title"><div class="step-badge" id="badge1">1</div>YouTube 계정 연결</div>
     <div id="loginArea">
@@ -134,59 +122,46 @@
     </div>
   </div>
 
-  <!-- Step 2: Video ID -->
   <div class="card disabled" id="cardVideo">
     <div class="card-title"><div class="step-badge" id="badge2">2</div>영상 ID 입력</div>
     <div class="input-group">
       <label class="input-label">YOUTUBE VIDEO ID</label>
-      <input class="input" id="videoId" placeholder="예: dQw4w9WgXcQ  또는  URL 전체 붙여넣기" oninput="onVideoIdChange()">
+      <input class="input" id="videoId" placeholder="예: dQw4w9WgXcQ 또는 URL 전체 붙여넣기" oninput="onVideoIdChange()">
     </div>
-    <p style="font-size:12px;color:var(--muted);">URL 전체를 붙여넣으면 ID가 자동으로 추출돼요.</p>
   </div>
 
-  <!-- Step 3: SRT Upload -->
   <div class="card disabled" id="cardSrt">
     <div class="card-title"><div class="step-badge" id="badge3">3</div>SRT 파일 업로드</div>
-
     <div class="upload-tabs">
       <button class="tab-btn active" id="tabZip" onclick="switchTab('zip')">📦 ZIP 파일</button>
-      <button class="tab-btn" id="tabMulti" onclick="switchTab('multi')">📄 개별 파일 여러 개</button>
+      <button class="tab-btn" id="tabMulti" onclick="switchTab('multi')">📄 개별 파일</button>
     </div>
-
-    <!-- ZIP tab -->
     <div id="panelZip">
       <div class="file-drop" id="fileDropZip" ondragover="onDragOver(event,'zip')" ondragleave="onDragLeave('zip')" ondrop="onDrop(event,'zip')">
         <input type="file" accept=".zip" onchange="onZipSelect(event)">
         <div class="file-icon">📦</div>
-        <div class="file-label">ZIP 파일을 드래그하거나 클릭해서 선택<br><span style="font-size:12px;color:#444;margin-top:4px;display:block;">파일명: ko.srt, en.srt, ja.srt ...</span></div>
+        <div class="file-label">ZIP 파일을 드래그하거나 클릭</div>
       </div>
     </div>
-
-    <!-- Multi tab -->
     <div id="panelMulti" class="hidden">
       <div class="file-drop" id="fileDropMulti" ondragover="onDragOver(event,'multi')" ondragleave="onDragLeave('multi')" ondrop="onDrop(event,'multi')">
         <input type="file" accept=".srt" multiple onchange="onMultiSelect(event)">
         <div class="file-icon">📄</div>
-        <div class="file-label">SRT 파일 여러 개를 드래그하거나 클릭해서 선택<br><span style="font-size:12px;color:#444;margin-top:4px;display:block;">파일명: ko.srt, en.srt, ja.srt ...</span></div>
+        <div class="file-label">SRT 파일들을 드래그하거나 클릭</div>
       </div>
     </div>
-
-    <!-- File list -->
     <div id="fileListWrap" class="hidden">
       <div class="file-list" id="fileList"></div>
       <div class="file-summary" id="fileSummary"></div>
     </div>
   </div>
 
-  <!-- Step 4: Language (auto-detected) -->
   <div class="card disabled" id="cardLang">
     <div class="card-title"><div class="step-badge" id="badge4">4</div>업로드할 언어 확인</div>
-    <div class="lang-auto-notice hidden" id="langAutoNotice"></div>
     <div class="lang-chips-wrap" id="langChips"></div>
-    <p style="font-size:12px;color:var(--muted);margin-top:12px;">선택된 언어: <strong style="color:var(--text)" id="selectedCount">0</strong>개 &nbsp;|&nbsp; 칩을 클릭해서 제외할 수 있어요.</p>
+    <p style="font-size:12px;color:var(--muted);margin-top:12px;">선택된 언어: <strong id="selectedCount">0</strong>개</p>
   </div>
 
-  <!-- Step 5: Upload -->
   <div class="card disabled" id="cardUpload">
     <div class="card-title"><div class="step-badge" id="badge5">5</div>업로드 시작</div>
     <button class="btn-upload" id="btnUpload" onclick="startUpload()" disabled>🚀 자막 업로드 시작</button>
@@ -200,7 +175,6 @@
       <div class="result-stat error"><div class="num" id="errorCount">0</div><div class="label">실패</div></div>
     </div>
   </div>
-
 </div>
 
 <script>
@@ -208,14 +182,11 @@ const CLIENT_ID = '692428333826-f6hcbspefcb836e0tfmve22l2905pu4i.apps.googleuser
 const SCOPES = 'https://www.googleapis.com/auth/youtube.force-ssl';
 const WORKER_URL = 'https://yt-caption-proxy.kimnabin01.workers.dev';
 
-// State
 let accessToken = null;
-let userInfo = null;
-let srtFiles = {}; // { langCode: srtContent }
+let srtFiles = {}; 
 let selectedLangs = new Set();
 let currentTab = 'zip';
 
-// ===== INIT =====
 window.onload = () => { loadGoogleApi(); };
 
 function loadGoogleApi() {
@@ -233,17 +204,13 @@ function initGoogleAuth() {
   });
 }
 
-// ===== AUTH =====
-function handleLogin() {
-  if (!window.tokenClient) { alert('잠깐 후 다시 눌러주세요!'); loadGoogleApi(); return; }
-  window.tokenClient.requestAccessToken();
-}
+function handleLogin() { window.tokenClient.requestAccessToken(); }
 
 async function onTokenResponse(resp) {
-  if (resp.error) { alert('로그인 실패: ' + resp.error); return; }
+  if (resp.error) return;
   accessToken = resp.access_token;
   const r = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', { headers: { Authorization: 'Bearer ' + accessToken } });
-  userInfo = await r.json();
+  const userInfo = await r.json();
   document.getElementById('loginArea').classList.add('hidden');
   document.getElementById('loggedInArea').classList.remove('hidden');
   document.getElementById('userName').textContent = userInfo.name;
@@ -257,16 +224,9 @@ async function onTokenResponse(resp) {
 
 function handleLogout() {
   if (accessToken) google.accounts.oauth2.revoke(accessToken, () => {});
-  accessToken = null; userInfo = null;
-  document.getElementById('loginArea').classList.remove('hidden');
-  document.getElementById('loggedInArea').classList.add('hidden');
-  document.getElementById('badge1').textContent = '1';
-  document.getElementById('badge1').classList.remove('done');
-  ['cardVideo','cardSrt','cardLang','cardUpload'].forEach(id => document.getElementById(id).classList.add('disabled'));
-  document.getElementById('btnUpload').disabled = true;
+  location.reload();
 }
 
-// ===== VIDEO ID =====
 function onVideoIdChange() {
   let val = document.getElementById('videoId').value.trim();
   const match = val.match(/[?&]v=([^&]+)/);
@@ -274,7 +234,6 @@ function onVideoIdChange() {
   checkReady();
 }
 
-// ===== TABS =====
 function switchTab(tab) {
   currentTab = tab;
   document.getElementById('tabZip').classList.toggle('active', tab === 'zip');
@@ -283,276 +242,154 @@ function switchTab(tab) {
   document.getElementById('panelMulti').classList.toggle('hidden', tab !== 'multi');
 }
 
-// ===== DRAG & DROP =====
 function onDragOver(e, type) { e.preventDefault(); document.getElementById(type==='zip'?'fileDropZip':'fileDropMulti').classList.add('dragover'); }
 function onDragLeave(type) { document.getElementById(type==='zip'?'fileDropZip':'fileDropMulti').classList.remove('dragover'); }
 function onDrop(e, type) {
   e.preventDefault();
-  document.getElementById(type==='zip'?'fileDropZip':'fileDropMulti').classList.remove('dragover');
   const files = [...e.dataTransfer.files];
   if (type === 'zip') { const z = files.find(f => f.name.endsWith('.zip')); if (z) processZip(z); }
   else { const srts = files.filter(f => f.name.endsWith('.srt')); if (srts.length) processSrtFiles(srts); }
 }
 
-// ===== ZIP =====
 function onZipSelect(e) { if (e.target.files[0]) processZip(e.target.files[0]); }
+function onMultiSelect(e) { processSrtFiles([...e.target.files]); }
 
 async function processZip(file) {
   try {
     const buf = await file.arrayBuffer();
     const bytes = new Uint8Array(buf);
     const found = {};
-
-    // ZIP 파일 파싱 (로컬 파일 헤더 방식)
-    let i = 0;
     const decoder = new TextDecoder('utf-8');
-
+    let i = 0;
     while (i < bytes.length - 4) {
-      // Local file header signature: PK\x03\x04
       if (bytes[i]===0x50 && bytes[i+1]===0x4B && bytes[i+2]===0x03 && bytes[i+3]===0x04) {
         const compression = bytes[i+8] | (bytes[i+9] << 8);
-        const compressedSize = bytes[i+18] | (bytes[i+19]<<8) | (bytes[i+20]<<16) | (bytes[i+21]<<24);
-        const filenameLen = bytes[i+26] | (bytes[i+27] << 8);
+        const compSize = bytes[i+18] | (bytes[i+19]<<8) | (bytes[i+20]<<16) | (bytes[i+21]<<24);
+        const nameLen = bytes[i+26] | (bytes[i+27] << 8);
         const extraLen = bytes[i+28] | (bytes[i+29] << 8);
-        const filename = decoder.decode(bytes.slice(i+30, i+30+filenameLen));
-        const dataStart = i + 30 + filenameLen + extraLen;
-        const compressedData = bytes.slice(dataStart, dataStart + compressedSize);
-
-        if (filename.endsWith('.srt') && !filename.startsWith('__MACOSX')) {
-          const fname = filename.split('/').pop();
-          const lang = fname.replace('.srt','').toLowerCase();
+        const fname = decoder.decode(bytes.slice(i+30, i+30+nameLen));
+        const dataStart = i + 30 + nameLen + extraLen;
+        if (fname.endsWith('.srt') && !fname.startsWith('__MACOSX')) {
+          const lang = fname.split('/').pop().replace('.srt','').toLowerCase();
           let content;
-          if (compression === 0) {
-            // 비압축
-            content = decoder.decode(compressedData);
-          } else if (compression === 8) {
-            // Deflate 압축
-            try {
-              const ds = new DecompressionStream('deflate-raw');
-              const writer = ds.writable.getWriter();
-              const reader = ds.readable.getReader();
-              writer.write(compressedData);
-              writer.close();
-              const chunks = [];
-              while (true) {
-                const {done, value} = await reader.read();
-                if (done) break;
-                chunks.push(value);
-              }
-              const total = chunks.reduce((a,c) => a + c.length, 0);
-              const merged = new Uint8Array(total);
-              let offset = 0;
-              chunks.forEach(c => { merged.set(c, offset); offset += c.length; });
-              content = decoder.decode(merged);
-            } catch(e) {
-              console.warn('압축 해제 실패:', filename, e);
-              i++; continue;
-            }
+          if (compression === 0) content = decoder.decode(bytes.slice(dataStart, dataStart + compSize));
+          else if (compression === 8) {
+            const ds = new DecompressionStream('deflate-raw');
+            const writer = ds.writable.getWriter();
+            writer.write(bytes.slice(dataStart, dataStart + compSize)); writer.close();
+            const reader = ds.readable.getReader();
+            const chunks = [];
+            while (true) { const {done, value} = await reader.read(); if (done) break; chunks.push(value); }
+            const merged = new Uint8Array(chunks.reduce((a,c) => a + c.length, 0));
+            let offset = 0; chunks.forEach(c => { merged.set(c, offset); offset += c.length; });
+            content = decoder.decode(merged);
           }
           if (content) found[lang] = content;
         }
-        i = dataStart + compressedSize;
-      } else {
-        i++;
-      }
+        i = dataStart + compSize;
+      } else i++;
     }
-
-    if (Object.keys(found).length === 0) { alert('ZIP 안에 .srt 파일이 없어요!\n파일명이 ko.srt, en.srt 형식인지 확인해주세요.'); return; }
     loadSrtMap(found);
-  } catch(e) { alert('ZIP 파일을 읽을 수 없어요: ' + e.message); }
+  } catch(e) { alert('ZIP 오류'); }
 }
-
-// ===== MULTI SRT =====
-function onMultiSelect(e) { processSrtFiles([...e.target.files]); }
 
 function processSrtFiles(files) {
-  const found = {};
-  let loaded = 0;
-  files.forEach(file => {
-    const lang = file.name.replace('.srt','').toLowerCase();
-    const reader = new FileReader();
-    reader.onload = e => {
-      found[lang] = e.target.result;
-      loaded++;
-      if (loaded === files.length) loadSrtMap(found);
-    };
-    reader.readAsText(file, 'UTF-8');
+  const found = {}; let loaded = 0;
+  files.forEach(f => {
+    const r = new FileReader();
+    r.onload = e => { found[f.name.replace('.srt','').toLowerCase()] = e.target.result; if (++loaded === files.length) loadSrtMap(found); };
+    r.readAsText(f, 'UTF-8');
   });
 }
 
-// ===== LOAD SRT MAP =====
 function loadSrtMap(map) {
-  srtFiles = map;
-  selectedLangs = new Set(Object.keys(map));
-
-  // Show file list
-  const listEl = document.getElementById('fileList');
-  listEl.innerHTML = '';
-  Object.entries(map).forEach(([lang, content]) => {
-    const lines = content.split('\n').length;
-    const item = document.createElement('div');
-    item.className = 'file-item';
-    item.innerHTML = `
-      <span class="lang-tag">${lang}</span>
-      <span class="file-item-name">${lang}.srt</span>
-      <span class="file-item-size">${lines}줄</span>
-      <button class="remove-btn" onclick="removeLang('${lang}')">✕</button>
-    `;
+  srtFiles = map; selectedLangs = new Set(Object.keys(map));
+  const listEl = document.getElementById('fileList'); listEl.innerHTML = '';
+  Object.entries(map).forEach(([l, c]) => {
+    const item = document.createElement('div'); item.className = 'file-item';
+    item.innerHTML = `<span class="lang-tag">${l}</span><span class="file-item-name">${l}.srt</span><button class="remove-btn" onclick="removeLang('${l}')">✕</button>`;
     listEl.appendChild(item);
   });
-
-  const count = Object.keys(map).length;
-  document.getElementById('fileSummary').textContent = `✓ ${count}개 언어 감지됨 → 자동으로 언어가 선택됐어요`;
   document.getElementById('fileListWrap').classList.remove('hidden');
-  document.getElementById('badge3').textContent = '✓';
-  document.getElementById('badge3').classList.add('done');
-
-  // Update lang chips
-  buildLangChips();
-  checkReady();
+  document.getElementById('badge3').textContent = '✓'; document.getElementById('badge3').classList.add('done');
+  buildLangChips(); checkReady();
 }
 
-function removeLang(lang) {
-  delete srtFiles[lang];
-  selectedLangs.delete(lang);
-  loadSrtMap(srtFiles);
-}
+function removeLang(l) { delete srtFiles[l]; selectedLangs.delete(l); loadSrtMap(srtFiles); }
 
-// ===== LANG CHIPS =====
 function buildLangChips() {
-  const wrap = document.getElementById('langChips');
-  wrap.innerHTML = '';
-  const notice = document.getElementById('langAutoNotice');
-
-  if (selectedLangs.size > 0) {
-    notice.textContent = `✓ 파일에서 ${selectedLangs.size}개 언어가 자동 감지됐어요. 칩을 클릭해서 제외할 수 있어요.`;
-    notice.classList.remove('hidden');
-  }
-
-  [...selectedLangs].sort().forEach(lang => {
-    const chip = document.createElement('button');
-    chip.className = 'lang-chip auto selected';
-    chip.textContent = lang;
-    chip.onclick = () => {
-      selectedLangs.delete(lang);
-      chip.remove();
-      updateLangCount();
-      checkReady();
-    };
+  const wrap = document.getElementById('langChips'); wrap.innerHTML = '';
+  [...selectedLangs].sort().forEach(l => {
+    const chip = document.createElement('button'); chip.className = 'lang-chip auto selected'; chip.textContent = l;
+    chip.onclick = () => { selectedLangs.delete(l); chip.remove(); updateLangCount(); checkReady(); };
     wrap.appendChild(chip);
   });
-
   updateLangCount();
 }
 
-function updateLangCount() {
-  document.getElementById('selectedCount').textContent = selectedLangs.size;
-}
+function updateLangCount() { document.getElementById('selectedCount').textContent = selectedLangs.size; }
 
-// ===== READY CHECK =====
 function checkReady() {
-  const ready = accessToken &&
-    document.getElementById('videoId').value.trim() &&
-    Object.keys(srtFiles).length > 0 &&
-    selectedLangs.size > 0;
+  const ready = accessToken && document.getElementById('videoId').value.trim() && selectedLangs.size > 0;
   document.getElementById('btnUpload').disabled = !ready;
 }
 
-// ===== UPLOAD =====
 async function startUpload() {
   const videoId = document.getElementById('videoId').value.trim();
   const langs = [...selectedLangs];
-
   document.getElementById('btnUpload').disabled = true;
   document.getElementById('progressWrap').classList.remove('hidden');
   document.getElementById('logWrap').classList.remove('hidden');
-  document.getElementById('resultSummary').classList.add('hidden');
-
   let successCount = 0, errorCount = 0;
-  addLog(`영상 ID: ${videoId} | ${langs.length}개 언어 업로드 시작`, 'info');
-
   for (let i = 0; i < langs.length; i++) {
     const lang = langs[i];
-    const pct = Math.round((i / langs.length) * 100);
-    document.getElementById('progressBar').style.width = pct + '%';
-    document.getElementById('progressText').textContent = `${i+1} / ${langs.length} — ${lang} 업로드 중...`;
-
-    if (!srtFiles[lang]) { addLog(`✗ ${lang}: 파일 없음`, 'warn'); errorCount++; continue; }
-
+    document.getElementById('progressBar').style.width = Math.round((i / langs.length) * 100) + '%';
+    document.getElementById('progressText').textContent = `${lang} 처리 중...`;
     try {
       await uploadCaption(videoId, lang, srtFiles[lang]);
-      addLog(`✓ ${lang}`, 'ok');
-      successCount++;
+      addLog(`✓ ${lang} 성공`, 'ok'); successCount++;
     } catch(e) {
-      addLog(`✗ ${lang}: ${e.message}`, 'err');
-      errorCount++;
+      addLog(`✗ ${lang} 실패: ${e.message}`, 'err'); errorCount++;
     }
-    await sleep(400);
+    await sleep(500);
   }
-
   document.getElementById('progressBar').style.width = '100%';
-  document.getElementById('progressText').textContent = '완료!';
   document.getElementById('successCount').textContent = successCount;
   document.getElementById('errorCount').textContent = errorCount;
   document.getElementById('resultSummary').classList.remove('hidden');
-  document.getElementById('btnUpload').disabled = false;
-  addLog(`--- 완료: 성공 ${successCount}개, 실패 ${errorCount}개 ---`, 'info');
 }
 
 async function uploadCaption(videoId, lang, srtText) {
-  // 1. 기존 자막 목록 조회 (Worker 경유)
-  const listRes = await fetch(
-    `${WORKER_URL}/captions/list?videoId=${videoId}`,
-    { headers: { 'X-Token': accessToken } }
-  );
+  // 1. 기존 삭제
+  const listRes = await fetch(`${WORKER_URL}/captions/list?videoId=${videoId}`, { headers: { 'X-Token': accessToken } });
   if (listRes.ok) {
     const listData = await listRes.json();
-    const existing = (listData.items || []).filter(item =>
-      item.snippet.language === lang && item.snippet.name === `Sub_${lang}`
-    );
-    // 2. 기존 자막 삭제 (Worker 경유)
+    const existing = (listData.items || []).filter(item => item.snippet.language === lang);
     for (const cap of existing) {
-      await fetch(
-        `${WORKER_URL}/captions/delete?id=${cap.id}`,
-        { method: 'DELETE', headers: { 'X-Token': accessToken } }
-      );
-      await sleep(200);
+      await fetch(`${WORKER_URL}/captions/delete?id=${cap.id}`, { method: 'DELETE', headers: { 'X-Token': accessToken } });
     }
   }
+  // 2. 조립 전송
+  const safeSrt = srtText.replace(/\r?\n/g, '\r\n');
+  const metadata = JSON.stringify({ snippet: { videoId, language: lang, name: `Sub_${lang}`, isDraft: false } });
+  const boundary = '-------' + Math.random().toString(16).slice(2);
+  const body = [`--${boundary}\r\n`, `Content-Type: application/json; charset=UTF-8\r\n\r\n`, `${metadata}\r\n`, `--${boundary}\r\n`, `Content-Type: text/plain; charset=UTF-8\r\n\r\n`, `${safeSrt}\r\n`, `--${boundary}--`].join('');
 
-  // 3. 새 자막 업로드
-  const metadata = JSON.stringify({
-    snippet: { videoId, language: lang, name: `Sub_${lang}`, isDraft: false }
+  const res = await fetch(`${WORKER_URL}/captions/upload`, {
+    method: 'POST',
+    headers: { 'X-Token': accessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body: body
   });
-  const boundary = 'srt_boundary_' + Date.now();
-  const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n${srtText}\r\n--${boundary}--`;
-
-  const res = await fetch(
-    `${WORKER_URL}/captions/upload`,
-    {
-      method: 'POST',
-      headers: { 'X-Token': accessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
-      body
-    }
-  );
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `HTTP ${res.status}`);
-  }
+  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err?.error?.message || `HTTP ${res.status}`); }
   return res.json();
 }
 
-function addLog(msg, type = 'info') {
+function addLog(msg, type) {
   const wrap = document.getElementById('logWrap');
-  const line = document.createElement('div');
-  line.className = `log-line ${type}`;
-  const now = new Date();
-  const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
-  line.innerHTML = `<span class="time">${t}</span><span class="msg">${msg}</span>`;
-  wrap.appendChild(line);
-  wrap.scrollTop = wrap.scrollHeight;
+  const line = document.createElement('div'); line.className = `log-line ${type}`;
+  line.innerHTML = `<span class="time">${new Date().toLocaleTimeString()}</span><span class="msg">${msg}</span>`;
+  wrap.appendChild(line); wrap.scrollTop = wrap.scrollHeight;
 }
-
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
 </body>
