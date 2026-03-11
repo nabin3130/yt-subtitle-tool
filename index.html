@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YT 자막 업로더</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 <style>
   :root {
     --bg: #0a0a0a; --surface: #111; --border: #222;
@@ -298,18 +298,65 @@ function onZipSelect(e) { if (e.target.files[0]) processZip(e.target.files[0]); 
 
 async function processZip(file) {
   try {
-    const zip = await JSZip.loadAsync(file);
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
     const found = {};
-    const promises = [];
-    zip.forEach((path, entry) => {
-      if (!entry.dir && path.endsWith('.srt')) {
-        const fname = path.split('/').pop();
-        const lang = fname.replace('.srt','').toLowerCase();
-        promises.push(entry.async('string').then(content => { found[lang] = content; }));
+
+    // ZIP 파일 파싱 (로컬 파일 헤더 방식)
+    let i = 0;
+    const decoder = new TextDecoder('utf-8');
+
+    while (i < bytes.length - 4) {
+      // Local file header signature: PK\x03\x04
+      if (bytes[i]===0x50 && bytes[i+1]===0x4B && bytes[i+2]===0x03 && bytes[i+3]===0x04) {
+        const compression = bytes[i+8] | (bytes[i+9] << 8);
+        const compressedSize = bytes[i+18] | (bytes[i+19]<<8) | (bytes[i+20]<<16) | (bytes[i+21]<<24);
+        const filenameLen = bytes[i+26] | (bytes[i+27] << 8);
+        const extraLen = bytes[i+28] | (bytes[i+29] << 8);
+        const filename = decoder.decode(bytes.slice(i+30, i+30+filenameLen));
+        const dataStart = i + 30 + filenameLen + extraLen;
+        const compressedData = bytes.slice(dataStart, dataStart + compressedSize);
+
+        if (filename.endsWith('.srt') && !filename.startsWith('__MACOSX')) {
+          const fname = filename.split('/').pop();
+          const lang = fname.replace('.srt','').toLowerCase();
+          let content;
+          if (compression === 0) {
+            // 비압축
+            content = decoder.decode(compressedData);
+          } else if (compression === 8) {
+            // Deflate 압축
+            try {
+              const ds = new DecompressionStream('deflate-raw');
+              const writer = ds.writable.getWriter();
+              const reader = ds.readable.getReader();
+              writer.write(compressedData);
+              writer.close();
+              const chunks = [];
+              while (true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+                chunks.push(value);
+              }
+              const total = chunks.reduce((a,c) => a + c.length, 0);
+              const merged = new Uint8Array(total);
+              let offset = 0;
+              chunks.forEach(c => { merged.set(c, offset); offset += c.length; });
+              content = decoder.decode(merged);
+            } catch(e) {
+              console.warn('압축 해제 실패:', filename, e);
+              i++; continue;
+            }
+          }
+          if (content) found[lang] = content;
+        }
+        i = dataStart + compressedSize;
+      } else {
+        i++;
       }
-    });
-    await Promise.all(promises);
-    if (Object.keys(found).length === 0) { alert('ZIP 안에 .srt 파일이 없어요!'); return; }
+    }
+
+    if (Object.keys(found).length === 0) { alert('ZIP 안에 .srt 파일이 없어요!\n파일명이 ko.srt, en.srt 형식인지 확인해주세요.'); return; }
     loadSrtMap(found);
   } catch(e) { alert('ZIP 파일을 읽을 수 없어요: ' + e.message); }
 }
