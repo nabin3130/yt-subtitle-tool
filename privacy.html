@@ -499,8 +499,6 @@ async function startUpload() {
   addLog(`--- 완료: 성공 ${successCount}개, 실패 ${errorCount}개 ---`, 'info');
 }
 
-const WORKER_URL = 'https://yt-caption-proxy.kimnabin01.workers.dev'; // Worker 배포 후 자동 생성되는 주소
-
 async function uploadCaption(videoId, lang, srtText) {
   // 1. 기존 자막 목록 조회 (Worker 경유)
   const listRes = await fetch(
