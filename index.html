@@ -334,6 +334,7 @@ function checkReady() {
   document.getElementById('btnUpload').disabled = !ready;
 }
 
+const LANG_MAP = {"arabic":"ar","chinese":"zh-Hans","dutch":"nl","english":"en","french":"fr","german":"de","hindi":"hi","indonesian":"id","italian":"it","japanese":"ja","korean":"ko","malay":"ms","persian":"fa","polish":"pl","portuguese":"pt","russian":"ru","spanish":"es","thai":"th","turkish":"tr","ukrainian":"uk","vietnamese":"vi"};
 async function startUpload() {
   const videoId = document.getElementById('videoId').value.trim();
   const langs = [...selectedLangs];
@@ -346,7 +347,7 @@ async function startUpload() {
     document.getElementById('progressBar').style.width = Math.round((i / langs.length) * 100) + '%';
     document.getElementById('progressText').textContent = `${lang} 처리 중...`;
     try {
-      await uploadCaption(videoId, lang, srtFiles[lang]);
+      await uploadCaption(videoId, LANG_MAP[lang] || lang, srtFiles[lang]);
       addLog(`✓ ${lang} 성공`, 'ok'); successCount++;
     } catch(e) {
       addLog(`✗ ${lang} 실패: ${e.message}`, 'err'); errorCount++;
@@ -370,7 +371,11 @@ async function uploadCaption(videoId, lang, srtText) {
     }
   }
   // 2. 조립 전송
-  const safeSrt = srtText.replace(/\r?\n/g, '\r\n');
+  const safeSrt = srtText
+    .replace(/(\d+):(\d{2}:\d{2})\.(\d+),(\d+):(\d{2}:\d{2})\.(\d+)/g,
+      (_, h1,m1,ms1, h2,m2,ms2) =>
+        `${h1.padStart(2,'0')}:${m1},${ms1} --> ${h2.padStart(2,'0')}:${m2},${ms2}`)
+    .replace(/\r?\n/g, '\r\n');
   const metadata = JSON.stringify({ snippet: { videoId, language: lang, name: `Sub_${lang}`, isDraft: false } });
   const boundary = '-------' + Math.random().toString(16).slice(2);
   const body = [`--${boundary}\r\n`, `Content-Type: application/json; charset=UTF-8\r\n\r\n`, `${metadata}\r\n`, `--${boundary}\r\n`, `Content-Type: text/plain; charset=UTF-8\r\n\r\n`, `${safeSrt}\r\n`, `--${boundary}--`].join('');
