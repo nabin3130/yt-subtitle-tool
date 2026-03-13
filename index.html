@@ -367,7 +367,7 @@ async function uploadLocalizations(videoId, localizations) {
   const res = await fetch('https://www.googleapis.com/youtube/v3/videos?part=localizations', {
     method: 'PUT',
     headers: { 'Authorization': 'Bearer '+accessToken, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: videoId, localizations })
+    body: JSON.stringify({ id: videoId, defaultLanguage: 'en', localizations })
   });
   if (!res.ok) { const err=await res.json().catch(()=>({})); throw new Error(err?.error?.message||'HTTP '+res.status); }
   return res.json();
