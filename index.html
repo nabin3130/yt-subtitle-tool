@@ -6,92 +6,83 @@
 <title>YT 자막 업로더</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0a; --surface: #111; --border: #222;
-    --accent: #ff0000; --accent2: #ff4444;
-    --text: #f0f0f0; --muted: #666;
-    --success: #00ff88; --warning: #ffaa00; --error: #ff4444;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:'Noto Sans KR',sans-serif; min-height:100vh; overflow-x:hidden; }
-  body::before {
-    content:''; position:fixed; inset:0;
-    background-image: linear-gradient(rgba(255,0,0,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(255,0,0,0.03) 1px,transparent 1px);
-    background-size:40px 40px; pointer-events:none; z-index:0;
-  }
-  .container { max-width:720px; margin:0 auto; padding:40px 24px; position:relative; z-index:1; }
-  .header { display:flex; align-items:center; gap:16px; margin-bottom:48px; padding-bottom:24px; border-bottom:1px solid var(--border); }
-  .logo { width:40px; height:40px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-weight:700; font-size:14px; flex-shrink:0; }
-  .header-text h1 { font-family:'Space Mono',monospace; font-size:18px; font-weight:700; }
-  .header-text p { font-size:13px; color:var(--muted); margin-top:2px; }
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:28px; margin-bottom:16px; transition:border-color 0.2s; }
-  .card:hover { border-color:#333; }
-  .card.disabled { opacity:0.4; pointer-events:none; }
-  .card-title { font-family:'Space Mono',monospace; font-size:11px; font-weight:700; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
-  .step-badge { width:20px; height:20px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:white; flex-shrink:0; }
-  .step-badge.done { background:var(--success); color:#000; }
-  .btn-google { display:flex; align-items:center; gap:12px; background:white; color:#333; border:none; border-radius:8px; padding:12px 24px; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:'Noto Sans KR',sans-serif; }
-  .btn-google:hover { background:#f5f5f5; transform:translateY(-1px); box-shadow:0 4px 20px rgba(255,255,255,0.1); }
-  .btn-google svg { width:18px; height:18px; flex-shrink:0; }
-  .user-info { display:flex; align-items:center; gap:12px; padding:12px 16px; background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.2); border-radius:8px; }
-  .user-avatar { width:32px; height:32px; border-radius:50%; overflow:hidden; }
-  .user-avatar img { width:100%; height:100%; object-fit:cover; }
-  .user-name { font-size:14px; font-weight:600; }
-  .user-email { font-size:12px; color:var(--muted); }
-  .btn-logout { margin-left:auto; background:none; border:1px solid var(--border); color:var(--muted); padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; transition:all 0.2s; font-family:'Noto Sans KR',sans-serif; }
-  .btn-logout:hover { border-color:var(--error); color:var(--error); }
-  .input-group { margin-bottom:16px; }
-  .input-label { font-size:12px; color:var(--muted); margin-bottom:8px; display:block; font-family:'Space Mono',monospace; }
-  .input { width:100%; background:#0a0a0a; border:1px solid var(--border); border-radius:8px; padding:12px 16px; color:var(--text); font-size:14px; font-family:'Space Mono',monospace; transition:border-color 0.2s; outline:none; }
-  .input:focus { border-color:var(--accent); }
-  .input::placeholder { color:var(--muted); }
-  .upload-tabs { display:flex; gap:8px; margin-bottom:16px; }
-  .tab-btn { padding:8px 16px; border-radius:6px; font-size:12px; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); transition:all 0.2s; font-family:'Noto Sans KR',sans-serif; }
-  .tab-btn.active { background:var(--accent); border-color:var(--accent); color:white; }
-  .file-drop { border:2px dashed var(--border); border-radius:8px; padding:32px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
-  .file-drop:hover, .file-drop.dragover { border-color:var(--accent); background:rgba(255,0,0,0.03); }
-  .file-drop input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
-  .file-icon { font-size:32px; margin-bottom:8px; }
-  .file-label { font-size:14px; color:var(--muted); }
-  .file-list { margin-top:16px; display:flex; flex-direction:column; gap:6px; max-height:200px; overflow-y:auto; }
-  .file-item { display:flex; align-items:center; gap:10px; padding:8px 12px; background:#0a0a0a; border:1px solid var(--border); border-radius:6px; }
-  .file-item .lang-tag { font-family:'Space Mono',monospace; font-size:11px; color:var(--accent); background:rgba(255,0,0,0.1); padding:2px 8px; border-radius:4px; flex-shrink:0; }
-  .file-item .file-item-name { font-size:12px; color:var(--muted); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .file-item .file-item-size { font-size:11px; color:var(--muted); flex-shrink:0; font-family:'Space Mono',monospace; }
-  .file-item .remove-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:0 4px; flex-shrink:0; }
-  .file-item .remove-btn:hover { color:var(--error); }
-  .file-summary { margin-top:12px; padding:10px 14px; background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.15); border-radius:6px; font-size:13px; color:var(--success); font-family:'Space Mono',monospace; }
-  .lang-auto-notice { padding:12px 16px; background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.15); border-radius:8px; font-size:13px; color:var(--success); margin-bottom:12px; }
-  .lang-chips-wrap { display:flex; flex-wrap:wrap; gap:6px; }
-  .lang-chip { padding:5px 10px; border:1px solid var(--border); border-radius:6px; font-size:11px; cursor:pointer; transition:all 0.15s; background:transparent; color:var(--muted); font-family:'Noto Sans KR',sans-serif; }
-  .lang-chip:hover { border-color:#444; color:var(--text); }
-  .lang-chip.selected { border-color:var(--accent); color:var(--accent); background:rgba(255,0,0,0.05); }
-  .lang-chip.auto { border-color:var(--success); color:var(--success); background:rgba(0,255,136,0.05); }
-  .btn-upload { width:100%; padding:16px; background:var(--accent); border:none; border-radius:8px; color:white; font-size:15px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:'Space Mono',monospace; letter-spacing:1px; margin-top:8px; }
-  .btn-upload:hover:not(:disabled) { background:var(--accent2); transform:translateY(-1px); box-shadow:0 4px 20px rgba(255,0,0,0.3); }
-  .btn-upload:disabled { opacity:0.3; cursor:not-allowed; }
-  .progress-wrap { margin-top:16px; }
-  .progress-bar-bg { height:4px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:8px; }
-  .progress-bar { height:100%; background:var(--accent); border-radius:2px; transition:width 0.3s; width:0%; }
-  .progress-text { font-size:12px; color:var(--muted); font-family:'Space Mono',monospace; }
-  .log-wrap { margin-top:16px; max-height:200px; overflow-y:auto; background:#050505; border:1px solid var(--border); border-radius:8px; padding:12px; }
-  .log-wrap::-webkit-scrollbar { width:4px; }
-  .log-wrap::-webkit-scrollbar-thumb { background:var(--border); }
-  .log-line { font-family:'Space Mono',monospace; font-size:11px; padding:2px 0; display:flex; gap:8px; }
-  .log-line .time { color:var(--muted); flex-shrink:0; }
-  .log-line.ok .msg { color:var(--success); }
-  .log-line.err .msg { color:var(--error); }
-  .log-line.info .msg { color:var(--text); }
-  .log-line.warn .msg { color:var(--warning); }
-  .result-summary { display:flex; gap:16px; margin-top:16px; }
-  .result-stat { flex:1; padding:16px; border-radius:8px; text-align:center; }
-  .result-stat.success { background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.2); }
-  .result-stat.error { background:rgba(255,68,68,0.05); border:1px solid rgba(255,68,68,0.2); }
-  .result-stat .num { font-family:'Space Mono',monospace; font-size:28px; font-weight:700; }
-  .result-stat.success .num { color:var(--success); }
-  .result-stat.error .num { color:var(--error); }
-  .result-stat .label { font-size:12px; color:var(--muted); margin-top:4px; }
-  .hidden { display:none !important; }
+  :root { --bg:#0a0a0a;--surface:#111;--border:#222;--accent:#ff0000;--accent2:#ff4444;--text:#f0f0f0;--muted:#666;--success:#00ff88;--warning:#ffaa00;--error:#ff4444; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,0,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,0,0,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .container{max-width:720px;margin:0 auto;padding:40px 24px;position:relative;z-index:1;}
+  .header{display:flex;align-items:center;gap:16px;margin-bottom:48px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+  .logo{width:40px;height:40px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-weight:700;font-size:14px;flex-shrink:0;}
+  .header-text h1{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;}
+  .header-text p{font-size:13px;color:var(--muted);margin-top:2px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:16px;transition:border-color 0.2s;}
+  .card:hover{border-color:#333;}
+  .card.disabled{opacity:0.4;pointer-events:none;}
+  .card-title{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+  .step-badge{width:20px;height:20px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;}
+  .step-badge.done{background:var(--success);color:#000;}
+  .btn-google{display:flex;align-items:center;gap:12px;background:white;color:#333;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Noto Sans KR',sans-serif;}
+  .btn-google:hover{background:#f5f5f5;transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,255,255,0.1);}
+  .btn-google svg{width:18px;height:18px;flex-shrink:0;}
+  .user-info{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.2);border-radius:8px;}
+  .user-avatar{width:32px;height:32px;border-radius:50%;overflow:hidden;}
+  .user-avatar img{width:100%;height:100%;object-fit:cover;}
+  .user-name{font-size:14px;font-weight:600;}
+  .user-email{font-size:12px;color:var(--muted);}
+  .btn-logout{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:all 0.2s;font-family:'Noto Sans KR',sans-serif;}
+  .btn-logout:hover{border-color:var(--error);color:var(--error);}
+  .input-group{margin-bottom:16px;}
+  .input-label{font-size:12px;color:var(--muted);margin-bottom:8px;display:block;font-family:'Space Mono',monospace;}
+  .input{width:100%;background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text);font-size:14px;font-family:'Space Mono',monospace;transition:border-color 0.2s;outline:none;}
+  .input:focus{border-color:var(--accent);}
+  .input::placeholder{color:var(--muted);}
+  .upload-tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .tab-btn{padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all 0.2s;font-family:'Noto Sans KR',sans-serif;}
+  .tab-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+  .file-drop{border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;}
+  .file-drop:hover,.file-drop.dragover{border-color:var(--accent);background:rgba(255,0,0,0.03);}
+  .file-drop input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .file-icon{font-size:32px;margin-bottom:8px;}
+  .file-label{font-size:14px;color:var(--muted);}
+  .file-list{margin-top:16px;display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
+  .file-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#0a0a0a;border:1px solid var(--border);border-radius:6px;}
+  .file-item .lang-tag{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);background:rgba(255,0,0,0.1);padding:2px 8px;border-radius:4px;flex-shrink:0;}
+  .file-item .file-item-name{font-size:12px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .file-item .remove-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 4px;flex-shrink:0;}
+  .file-item .remove-btn:hover{color:var(--error);}
+  .file-summary{margin-top:12px;padding:10px 14px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.15);border-radius:6px;font-size:13px;color:var(--success);font-family:'Space Mono',monospace;}
+  .lang-chips-wrap{display:flex;flex-wrap:wrap;gap:6px;}
+  .lang-chip{padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--muted);font-family:'Noto Sans KR',sans-serif;}
+  .lang-chip:hover{border-color:#444;color:var(--text);}
+  .lang-chip.selected{border-color:var(--accent);color:var(--accent);background:rgba(255,0,0,0.05);}
+  .lang-chip.auto{border-color:var(--success);color:var(--success);background:rgba(0,255,136,0.05);}
+  .btn-upload{width:100%;padding:16px;background:var(--accent);border:none;border-radius:8px;color:white;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:'Space Mono',monospace;letter-spacing:1px;margin-top:8px;}
+  .btn-upload:hover:not(:disabled){background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,0,0,0.3);}
+  .btn-upload:disabled{opacity:0.3;cursor:not-allowed;}
+  .progress-wrap{margin-top:16px;}
+  .progress-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px;}
+  .progress-bar{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s;width:0%;}
+  .progress-text{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+  .log-wrap{margin-top:16px;max-height:200px;overflow-y:auto;background:#050505;border:1px solid var(--border);border-radius:8px;padding:12px;}
+  .log-wrap::-webkit-scrollbar{width:4px;}
+  .log-wrap::-webkit-scrollbar-thumb{background:var(--border);}
+  .log-line{font-family:'Space Mono',monospace;font-size:11px;padding:2px 0;display:flex;gap:8px;}
+  .log-line .time{color:var(--muted);flex-shrink:0;}
+  .log-line.ok .msg{color:var(--success);}
+  .log-line.err .msg{color:var(--error);}
+  .log-line.info .msg{color:var(--text);}
+  .log-line.warn .msg{color:var(--warning);}
+  .result-summary{display:flex;gap:16px;margin-top:16px;}
+  .result-stat{flex:1;padding:16px;border-radius:8px;text-align:center;}
+  .result-stat.success{background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.2);}
+  .result-stat.error{background:rgba(255,68,68,0.05);border:1px solid rgba(255,68,68,0.2);}
+  .result-stat .num{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;}
+  .result-stat.success .num{color:var(--success);}
+  .result-stat.error .num{color:var(--error);}
+  .result-stat .label{font-size:12px;color:var(--muted);margin-top:4px;}
+  .optional-badge{font-size:10px;color:var(--muted);margin-left:6px;font-weight:400;letter-spacing:0;text-transform:none;}
+  .json-loaded{margin-top:12px;padding:10px 14px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.15);border-radius:6px;font-size:13px;color:var(--success);font-family:'Space Mono',monospace;}
+  .hidden{display:none !important;}
 </style>
 </head>
 <body>
@@ -100,7 +91,7 @@
     <div class="logo">YT</div>
     <div class="header-text">
       <h1>자막 업로더</h1>
-      <p>YouTube 다국어 자막 자동 업로드</p>
+      <p>YouTube 다국어 자막 · 제목 · 설명 자동 업로드</p>
     </div>
   </div>
 
@@ -131,7 +122,7 @@
   </div>
 
   <div class="card disabled" id="cardSrt">
-    <div class="card-title"><div class="step-badge" id="badge3">3</div>SRT 파일 업로드</div>
+    <div class="card-title"><div class="step-badge" id="badge3">3</div>SRT 자막 파일 업로드</div>
     <div class="upload-tabs">
       <button class="tab-btn active" id="tabZip" onclick="switchTab('zip')">📦 ZIP 파일</button>
       <button class="tab-btn" id="tabMulti" onclick="switchTab('multi')">📄 개별 파일</button>
@@ -156,15 +147,33 @@
     </div>
   </div>
 
+  <div class="card disabled" id="cardMeta">
+    <div class="card-title">
+      <div class="step-badge" id="badge4">4</div>
+      제목 · 설명 JSON 업로드
+      <span class="optional-badge">(선택사항)</span>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+      Claude에게 제목/설명 번역을 요청하면 JSON 파일을 만들어줘요.<br>
+      없으면 건너뛰고 자막만 업로드돼요.
+    </p>
+    <div class="file-drop" id="fileDropJson" ondragover="onDragOver(event,'json')" ondragleave="onDragLeave('json')" ondrop="onDrop(event,'json')">
+      <input type="file" accept=".json" onchange="onJsonSelect(event)">
+      <div class="file-icon">📋</div>
+      <div class="file-label">JSON 파일을 드래그하거나 클릭</div>
+    </div>
+    <div id="jsonLoaded" class="json-loaded hidden"></div>
+  </div>
+
   <div class="card disabled" id="cardLang">
-    <div class="card-title"><div class="step-badge" id="badge4">4</div>업로드할 언어 확인</div>
+    <div class="card-title"><div class="step-badge" id="badge5">5</div>업로드할 언어 확인</div>
     <div class="lang-chips-wrap" id="langChips"></div>
     <p style="font-size:12px;color:var(--muted);margin-top:12px;">선택된 언어: <strong id="selectedCount">0</strong>개</p>
   </div>
 
   <div class="card disabled" id="cardUpload">
-    <div class="card-title"><div class="step-badge" id="badge5">5</div>업로드 시작</div>
-    <button class="btn-upload" id="btnUpload" onclick="startUpload()" disabled>🚀 자막 업로드 시작</button>
+    <div class="card-title"><div class="step-badge" id="badge6">6</div>업로드 시작</div>
+    <button class="btn-upload" id="btnUpload" onclick="startUpload()" disabled>🚀 업로드 시작</button>
     <div class="progress-wrap hidden" id="progressWrap">
       <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
       <div class="progress-text" id="progressText">준비 중...</div>
@@ -183,9 +192,12 @@ const SCOPES = 'https://www.googleapis.com/auth/youtube.force-ssl';
 const WORKER_URL = 'https://yt-caption-proxy.kimnabin01.workers.dev';
 
 let accessToken = null;
-let srtFiles = {}; 
+let srtFiles = {};
 let selectedLangs = new Set();
 let currentTab = 'zip';
+let metaData = null;
+
+const LANG_MAP = {"arabic":"ar","chinese":"zh-Hans","dutch":"nl","english":"en","french":"fr","german":"de","hindi":"hi","indonesian":"id","italian":"it","japanese":"ja","korean":"ko","malay":"ms","persian":"fa","polish":"pl","portuguese":"pt","russian":"ru","spanish":"es","thai":"th","turkish":"tr","ukrainian":"uk","vietnamese":"vi"};
 
 window.onload = () => { loadGoogleApi(); };
 
@@ -199,9 +211,7 @@ function loadGoogleApi() {
 
 function initGoogleAuth() {
   if (typeof google === 'undefined' || !google.accounts) { setTimeout(initGoogleAuth, 300); return; }
-  window.tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: SCOPES, callback: onTokenResponse,
-  });
+  window.tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: onTokenResponse });
 }
 
 function handleLogin() { window.tokenClient.requestAccessToken(); }
@@ -210,15 +220,15 @@ async function onTokenResponse(resp) {
   if (resp.error) return;
   accessToken = resp.access_token;
   const r = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', { headers: { Authorization: 'Bearer ' + accessToken } });
-  const userInfo = await r.json();
+  const u = await r.json();
   document.getElementById('loginArea').classList.add('hidden');
   document.getElementById('loggedInArea').classList.remove('hidden');
-  document.getElementById('userName').textContent = userInfo.name;
-  document.getElementById('userEmail').textContent = userInfo.email;
-  if (userInfo.picture) document.getElementById('userAvatar').src = userInfo.picture;
+  document.getElementById('userName').textContent = u.name;
+  document.getElementById('userEmail').textContent = u.email;
+  if (u.picture) document.getElementById('userAvatar').src = u.picture;
   document.getElementById('badge1').textContent = '✓';
   document.getElementById('badge1').classList.add('done');
-  ['cardVideo','cardSrt','cardLang','cardUpload'].forEach(id => document.getElementById(id).classList.remove('disabled'));
+  ['cardVideo','cardSrt','cardMeta','cardLang','cardUpload'].forEach(id => document.getElementById(id).classList.remove('disabled'));
   checkReady();
 }
 
@@ -230,7 +240,7 @@ function handleLogout() {
 function onVideoIdChange() {
   let val = document.getElementById('videoId').value.trim();
   const match = val.match(/[?&]v=([^&]+)/);
-  if (match) { document.getElementById('videoId').value = match[1]; }
+  if (match) document.getElementById('videoId').value = match[1];
   checkReady();
 }
 
@@ -242,17 +252,36 @@ function switchTab(tab) {
   document.getElementById('panelMulti').classList.toggle('hidden', tab !== 'multi');
 }
 
-function onDragOver(e, type) { e.preventDefault(); document.getElementById(type==='zip'?'fileDropZip':'fileDropMulti').classList.add('dragover'); }
-function onDragLeave(type) { document.getElementById(type==='zip'?'fileDropZip':'fileDropMulti').classList.remove('dragover'); }
+function onDragOver(e, type) { e.preventDefault(); document.getElementById(type==='zip'?'fileDropZip':type==='json'?'fileDropJson':'fileDropMulti').classList.add('dragover'); }
+function onDragLeave(type) { document.getElementById(type==='zip'?'fileDropZip':type==='json'?'fileDropJson':'fileDropMulti').classList.remove('dragover'); }
 function onDrop(e, type) {
   e.preventDefault();
   const files = [...e.dataTransfer.files];
   if (type === 'zip') { const z = files.find(f => f.name.endsWith('.zip')); if (z) processZip(z); }
+  else if (type === 'json') { const j = files.find(f => f.name.endsWith('.json')); if (j) processJson(j); }
   else { const srts = files.filter(f => f.name.endsWith('.srt')); if (srts.length) processSrtFiles(srts); }
 }
 
 function onZipSelect(e) { if (e.target.files[0]) processZip(e.target.files[0]); }
 function onMultiSelect(e) { processSrtFiles([...e.target.files]); }
+function onJsonSelect(e) { if (e.target.files[0]) processJson(e.target.files[0]); }
+
+function processJson(file) {
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      metaData = JSON.parse(e.target.result);
+      const langCount = Object.keys(metaData).length;
+      const el = document.getElementById('jsonLoaded');
+      el.textContent = 'OK ' + file.name + ' 로드됨 - ' + langCount + '개 언어';
+      el.classList.remove('hidden');
+      document.getElementById('badge4').textContent = '✓';
+      document.getElementById('badge4').classList.add('done');
+      checkReady();
+    } catch(err) { alert('JSON 파일 형식이 올바르지 않아요.'); }
+  };
+  r.readAsText(file, 'UTF-8');
+}
 
 async function processZip(file) {
   try {
@@ -262,31 +291,31 @@ async function processZip(file) {
     const decoder = new TextDecoder('utf-8');
     let i = 0;
     while (i < bytes.length - 4) {
-      if (bytes[i]===0x50 && bytes[i+1]===0x4B && bytes[i+2]===0x03 && bytes[i+3]===0x04) {
-        const compression = bytes[i+8] | (bytes[i+9] << 8);
-        const compSize = bytes[i+18] | (bytes[i+19]<<8) | (bytes[i+20]<<16) | (bytes[i+21]<<24);
-        const nameLen = bytes[i+26] | (bytes[i+27] << 8);
-        const extraLen = bytes[i+28] | (bytes[i+29] << 8);
-        const fname = decoder.decode(bytes.slice(i+30, i+30+nameLen));
-        const dataStart = i + 30 + nameLen + extraLen;
-        if (fname.endsWith('.srt') && !fname.startsWith('__MACOSX')) {
+      if (bytes[i]===0x50&&bytes[i+1]===0x4B&&bytes[i+2]===0x03&&bytes[i+3]===0x04) {
+        const compression = bytes[i+8]|(bytes[i+9]<<8);
+        const compSize = bytes[i+18]|(bytes[i+19]<<8)|(bytes[i+20]<<16)|(bytes[i+21]<<24);
+        const nameLen = bytes[i+26]|(bytes[i+27]<<8);
+        const extraLen = bytes[i+28]|(bytes[i+29]<<8);
+        const fname = decoder.decode(bytes.slice(i+30,i+30+nameLen));
+        const dataStart = i+30+nameLen+extraLen;
+        if (fname.endsWith('.srt')&&!fname.startsWith('__MACOSX')) {
           const lang = fname.split('/').pop().replace('.srt','').toLowerCase();
           let content;
-          if (compression === 0) content = decoder.decode(bytes.slice(dataStart, dataStart + compSize));
-          else if (compression === 8) {
+          if (compression===0) content = decoder.decode(bytes.slice(dataStart,dataStart+compSize));
+          else if (compression===8) {
             const ds = new DecompressionStream('deflate-raw');
             const writer = ds.writable.getWriter();
-            writer.write(bytes.slice(dataStart, dataStart + compSize)); writer.close();
+            writer.write(bytes.slice(dataStart,dataStart+compSize)); writer.close();
             const reader = ds.readable.getReader();
             const chunks = [];
-            while (true) { const {done, value} = await reader.read(); if (done) break; chunks.push(value); }
-            const merged = new Uint8Array(chunks.reduce((a,c) => a + c.length, 0));
-            let offset = 0; chunks.forEach(c => { merged.set(c, offset); offset += c.length; });
+            while (true) { const {done,value} = await reader.read(); if (done) break; chunks.push(value); }
+            const merged = new Uint8Array(chunks.reduce((a,c)=>a+c.length,0));
+            let offset=0; chunks.forEach(c=>{merged.set(c,offset);offset+=c.length;});
             content = decoder.decode(merged);
           }
           if (content) found[lang] = content;
         }
-        i = dataStart + compSize;
+        i = dataStart+compSize;
       } else i++;
     }
     loadSrtMap(found);
@@ -294,108 +323,132 @@ async function processZip(file) {
 }
 
 function processSrtFiles(files) {
-  const found = {}; let loaded = 0;
+  const found={}; let loaded=0;
   files.forEach(f => {
     const r = new FileReader();
-    r.onload = e => { found[f.name.replace('.srt','').toLowerCase()] = e.target.result; if (++loaded === files.length) loadSrtMap(found); };
-    r.readAsText(f, 'UTF-8');
+    r.onload = e => { found[f.name.replace('.srt','').toLowerCase()] = e.target.result; if (++loaded===files.length) loadSrtMap(found); };
+    r.readAsText(f,'UTF-8');
   });
 }
 
 function loadSrtMap(map) {
-  srtFiles = map; selectedLangs = new Set(Object.keys(map));
-  const listEl = document.getElementById('fileList'); listEl.innerHTML = '';
-  Object.entries(map).forEach(([l, c]) => {
-    const item = document.createElement('div'); item.className = 'file-item';
-    item.innerHTML = `<span class="lang-tag">${l}</span><span class="file-item-name">${l}.srt</span><button class="remove-btn" onclick="removeLang('${l}')">✕</button>`;
+  srtFiles=map; selectedLangs=new Set(Object.keys(map));
+  const listEl=document.getElementById('fileList'); listEl.innerHTML='';
+  Object.entries(map).forEach(([l]) => {
+    const item=document.createElement('div'); item.className='file-item';
+    item.innerHTML='<span class="lang-tag">'+l+'</span><span class="file-item-name">'+l+'.srt</span><button class="remove-btn" onclick="removeLang(\''+l+'\')">✕</button>';
     listEl.appendChild(item);
   });
   document.getElementById('fileListWrap').classList.remove('hidden');
-  document.getElementById('badge3').textContent = '✓'; document.getElementById('badge3').classList.add('done');
+  document.getElementById('badge3').textContent='✓'; document.getElementById('badge3').classList.add('done');
   buildLangChips(); checkReady();
 }
 
 function removeLang(l) { delete srtFiles[l]; selectedLangs.delete(l); loadSrtMap(srtFiles); }
 
 function buildLangChips() {
-  const wrap = document.getElementById('langChips'); wrap.innerHTML = '';
+  const wrap=document.getElementById('langChips'); wrap.innerHTML='';
   [...selectedLangs].sort().forEach(l => {
-    const chip = document.createElement('button'); chip.className = 'lang-chip auto selected'; chip.textContent = l;
-    chip.onclick = () => { selectedLangs.delete(l); chip.remove(); updateLangCount(); checkReady(); };
+    const chip=document.createElement('button'); chip.className='lang-chip auto selected'; chip.textContent=l;
+    chip.onclick=()=>{ selectedLangs.delete(l); chip.remove(); updateLangCount(); checkReady(); };
     wrap.appendChild(chip);
   });
   updateLangCount();
 }
 
-function updateLangCount() { document.getElementById('selectedCount').textContent = selectedLangs.size; }
+function updateLangCount() { document.getElementById('selectedCount').textContent=selectedLangs.size; }
 
 function checkReady() {
   const ready = accessToken && document.getElementById('videoId').value.trim() && selectedLangs.size > 0;
   document.getElementById('btnUpload').disabled = !ready;
 }
 
-const LANG_MAP = {"arabic":"ar","chinese":"zh-Hans","dutch":"nl","english":"en","french":"fr","german":"de","hindi":"hi","indonesian":"id","italian":"it","japanese":"ja","korean":"ko","malay":"ms","persian":"fa","polish":"pl","portuguese":"pt","russian":"ru","spanish":"es","thai":"th","turkish":"tr","ukrainian":"uk","vietnamese":"vi"};
-async function startUpload() {
-  const videoId = document.getElementById('videoId').value.trim();
-  const langs = [...selectedLangs];
-  document.getElementById('btnUpload').disabled = true;
-  document.getElementById('progressWrap').classList.remove('hidden');
-  document.getElementById('logWrap').classList.remove('hidden');
-  let successCount = 0, errorCount = 0;
-  for (let i = 0; i < langs.length; i++) {
-    const lang = langs[i];
-    document.getElementById('progressBar').style.width = Math.round((i / langs.length) * 100) + '%';
-    document.getElementById('progressText').textContent = `${lang} 처리 중...`;
-    try {
-      await uploadCaption(videoId, LANG_MAP[lang] || lang, srtFiles[lang]);
-      addLog(`✓ ${lang} 성공`, 'ok'); successCount++;
-    } catch(e) {
-      addLog(`✗ ${lang} 실패: ${e.message}`, 'err'); errorCount++;
-    }
-    await sleep(500);
-  }
-  document.getElementById('progressBar').style.width = '100%';
-  document.getElementById('successCount').textContent = successCount;
-  document.getElementById('errorCount').textContent = errorCount;
-  document.getElementById('resultSummary').classList.remove('hidden');
-}
-
-async function uploadCaption(videoId, lang, srtText) {
-  // 1. 기존 삭제
-  const listRes = await fetch(`${WORKER_URL}/captions/list?videoId=${videoId}`, { headers: { 'X-Token': accessToken } });
-  if (listRes.ok) {
-    const listData = await listRes.json();
-    const existing = (listData.items || []).filter(item => item.snippet.language === lang);
-    for (const cap of existing) {
-      await fetch(`${WORKER_URL}/captions/delete?id=${cap.id}`, { method: 'DELETE', headers: { 'X-Token': accessToken } });
-    }
-  }
-  // 2. 조립 전송
-  const safeSrt = srtText
-    .replace(/(\d+):(\d{2}:\d{2})\.(\d+),(\d+):(\d{2}:\d{2})\.(\d+)/g,
-      (_, h1,m1,ms1, h2,m2,ms2) =>
-        `${h1.padStart(2,'0')}:${m1},${ms1} --> ${h2.padStart(2,'0')}:${m2},${ms2}`)
-    .replace(/\r?\n/g, '\r\n');
-  const metadata = JSON.stringify({ snippet: { videoId, language: lang, name: `Sub_${lang}`, isDraft: false } });
-  const boundary = '-------' + Math.random().toString(16).slice(2);
-  const body = [`--${boundary}\r\n`, `Content-Type: application/json; charset=UTF-8\r\n\r\n`, `${metadata}\r\n`, `--${boundary}\r\n`, `Content-Type: text/plain; charset=UTF-8\r\n\r\n`, `${safeSrt}\r\n`, `--${boundary}--`].join('');
-
-  const res = await fetch(`${WORKER_URL}/captions/upload`, {
-    method: 'POST',
-    headers: { 'X-Token': accessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
-    body: body
+async function uploadLocalizations(videoId, localizations) {
+  const res = await fetch('https://www.googleapis.com/youtube/v3/videos?part=localizations', {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer '+accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: videoId, localizations })
   });
-  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err?.error?.message || `HTTP ${res.status}`); }
+  if (!res.ok) { const err=await res.json().catch(()=>({})); throw new Error(err?.error?.message||'HTTP '+res.status); }
   return res.json();
 }
 
-function addLog(msg, type) {
-  const wrap = document.getElementById('logWrap');
-  const line = document.createElement('div'); line.className = `log-line ${type}`;
-  line.innerHTML = `<span class="time">${new Date().toLocaleTimeString()}</span><span class="msg">${msg}</span>`;
-  wrap.appendChild(line); wrap.scrollTop = wrap.scrollHeight;
+async function uploadCaption(videoId, lang, srtText) {
+  const listRes = await fetch(WORKER_URL+'/captions/list?videoId='+videoId, { headers: { 'X-Token': accessToken } });
+  if (listRes.ok) {
+    const listData = await listRes.json();
+    const existing = (listData.items||[]).filter(item=>item.snippet.language===lang);
+    for (const cap of existing) {
+      await fetch(WORKER_URL+'/captions/delete?id='+cap.id, { method:'DELETE', headers:{'X-Token':accessToken} });
+    }
+  }
+  const safeSrt = srtText
+    .replace(/(\d+):(\d{2}:\d{2})\.(\d+),(\d+):(\d{2}:\d{2})\.(\d+)/g,
+      (_,h1,m1,ms1,h2,m2,ms2)=>h1.padStart(2,'0')+':'+m1+','+ms1+' --> '+h2.padStart(2,'0')+':'+m2+','+ms2)
+    .replace(/\r?\n/g,'\r\n');
+  const metadata = { snippet:{ videoId, language:lang, name:'Sub_'+lang, isDraft:false } };
+  const boundary = 'yt_boundary_'+Math.random().toString(36).slice(2);
+  const encoder = new TextEncoder();
+  const metaPart = '--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(metadata)+'\r\n';
+  const srtPart = '--'+boundary+'\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n'+safeSrt+'\r\n';
+  const closing = '--'+boundary+'--';
+  const body = new Blob([encoder.encode(metaPart),encoder.encode(srtPart),encoder.encode(closing)],{type:'multipart/related; boundary='+boundary});
+  const res = await fetch(WORKER_URL+'/captions/upload', {
+    method:'POST',
+    headers:{'X-Token':accessToken,'Content-Type':'multipart/related; boundary='+boundary},
+    body
+  });
+  const data = await res.json();
+  if (!res.ok||!data.id) throw new Error(data?.error?.message||'HTTP '+res.status);
+  return data;
 }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function startUpload() {
+  const videoId = document.getElementById('videoId').value.trim();
+  const langs = [...selectedLangs];
+  document.getElementById('btnUpload').disabled=true;
+  document.getElementById('progressWrap').classList.remove('hidden');
+  document.getElementById('logWrap').classList.remove('hidden');
+  document.getElementById('resultSummary').classList.add('hidden');
+  let successCount=0, errorCount=0;
+  const totalSteps = langs.length + (metaData ? 1 : 0);
+  let step=0;
+
+  for (let i=0; i<langs.length; i++) {
+    const lang=langs[i];
+    const ytLang=LANG_MAP[lang]||lang;
+    document.getElementById('progressBar').style.width=Math.round((step/totalSteps)*100)+'%';
+    document.getElementById('progressText').textContent='[자막] '+lang+' 처리 중...';
+    try { await uploadCaption(videoId,ytLang,srtFiles[lang]); addLog('OK 자막 '+lang+' 성공','ok'); successCount++; }
+    catch(e) { addLog('FAIL 자막 '+lang+' 실패: '+e.message,'err'); errorCount++; }
+    step++; await sleep(500);
+  }
+
+  if (metaData) {
+    document.getElementById('progressBar').style.width=Math.round((step/totalSteps)*100)+'%';
+    document.getElementById('progressText').textContent='제목/설명 업로드 중...';
+    try {
+      await uploadLocalizations(videoId, metaData);
+      addLog('OK 제목/설명 업로드 성공 ('+Object.keys(metaData).length+'개 언어)','ok');
+      successCount++;
+    } catch(e) { addLog('FAIL 제목/설명 업로드 실패: '+e.message,'err'); errorCount++; }
+    step++;
+  }
+
+  document.getElementById('progressBar').style.width='100%';
+  document.getElementById('progressText').textContent='완료!';
+  document.getElementById('successCount').textContent=successCount;
+  document.getElementById('errorCount').textContent=errorCount;
+  document.getElementById('resultSummary').classList.remove('hidden');
+}
+
+function addLog(msg,type) {
+  const wrap=document.getElementById('logWrap');
+  const line=document.createElement('div'); line.className='log-line '+type;
+  line.innerHTML='<span class="time">'+new Date().toLocaleTimeString()+'</span><span class="msg">'+msg+'</span>';
+  wrap.appendChild(line); wrap.scrollTop=wrap.scrollHeight;
+}
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 </script>
 </body>
 </html>
