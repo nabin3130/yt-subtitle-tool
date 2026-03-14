@@ -140,6 +140,40 @@
 
   .hidden { display:none !important; }
 
+  /* Full screen dropzone overlay */
+  .dropzone-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.08); backdrop-filter:blur(2px); z-index:200; display:none; align-items:center; justify-content:center; flex-direction:column; gap:12px; border:3px dashed var(--accent); pointer-events:none; }
+  .dropzone-overlay.active { display:flex; }
+  body.dark .dropzone-overlay { background:rgba(0,0,0,0.4); }
+  .dropzone-overlay-text { font-size:22px; font-weight:700; color:var(--accent); font-family:'DM Sans',sans-serif; }
+  .dropzone-overlay-icon { font-size:56px; animation:bounce 0.6s infinite alternate; }
+  @keyframes bounce { from { transform:translateY(0); } to { transform:translateY(-10px); } }
+
+  /* Upload button spinner */
+  .btn-upload { position:relative; overflow:hidden; }
+  .btn-upload.loading { pointer-events:none; opacity:0.8; }
+  .spinner { display:none; width:16px; height:16px; border:2px solid rgba(255,255,255,0.4); border-top-color:white; border-radius:50%; animation:spin 0.7s linear infinite; margin-right:8px; flex-shrink:0; }
+  body.dark .spinner { border-color:rgba(0,0,0,0.3); border-top-color:#111; }
+  .btn-upload.loading .spinner { display:inline-block; }
+  .btn-upload-inner { display:flex; align-items:center; justify-content:center; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Report */
+  .report-wrap { margin-top:14px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+  .report-title { font-size:12px; font-weight:600; color:var(--text-2); padding:10px 14px; border-bottom:1px solid var(--border); font-family:'DM Mono',monospace; }
+  .report-list { max-height:160px; overflow-y:auto; }
+  .report-item { display:flex; align-items:center; gap:8px; padding:7px 14px; border-bottom:1px solid var(--border); font-size:12px; font-family:'DM Mono',monospace; }
+  .report-item:last-child { border-bottom:none; }
+  .report-item.ok .report-status { color:var(--success); }
+  .report-item.err .report-status { color:var(--error); }
+  .report-status { width:14px; flex-shrink:0; }
+  .report-lang { color:var(--text); flex:1; }
+  .report-msg { color:var(--text-3); font-size:11px; }
+
+  /* Footer */
+  .footer { text-align:center; padding:32px 0 16px; color:var(--text-3); font-size:12px; font-family:'DM Mono',monospace; }
+  .footer a { color:var(--text-3); text-decoration:none; }
+  .footer a:hover { color:var(--text-2); }
+
   /* Dark mode */
   body.dark { --bg:#0f0f0f; --surface:#1a1a1a; --border:#2a2a2a; --border-hover:#3a3a3a; --text:#f0f0f0; --text-2:#aaa; --text-3:#666; --accent-light:rgba(220,0,0,0.1); --success-light:rgba(22,163,74,0.1); --success-border:rgba(22,163,74,0.3); --error-light:rgba(220,38,38,0.1); --shadow-sm:0 1px 3px rgba(0,0,0,0.3); --shadow-md:0 4px 16px rgba(0,0,0,0.4); }
   body.dark .btn-google { background:#222; color:#eee; border-color:#333; }
@@ -193,6 +227,10 @@
 </style>
 </head>
 <body>
+<div class="dropzone-overlay" id="dropzoneOverlay">
+  <div class="dropzone-overlay-icon">📂</div>
+  <div class="dropzone-overlay-text">파일을 여기에 놓으세요</div>
+</div>
 <div style="position:fixed;top:20px;right:20px;display:flex;align-items:center;gap:8px;z-index:100;">
   <button class="btn-logout-top hidden" id="btnLogoutTop" onclick="handleLogout()">로그아웃</button>
   <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
@@ -306,7 +344,12 @@
       <div class="step-num" id="badge6">6</div>
       <div class="card-title">업로드</div>
     </div>
-    <button class="btn-upload" id="btnUpload" onclick="startUpload()" disabled>업로드 시작</button>
+    <button class="btn-upload" id="btnUpload" onclick="startUpload()" disabled>
+      <div class="btn-upload-inner">
+        <div class="spinner" id="uploadSpinner"></div>
+        <span id="btnUploadText">업로드 시작</span>
+      </div>
+    </button>
     <div class="progress-wrap hidden" id="progressWrap">
       <div class="progress-header">
         <div class="progress-text" id="progressText">준비 중...</div>
@@ -319,8 +362,15 @@
       <div class="result-stat success"><div class="num" id="successCount">0</div><div class="label">성공</div></div>
       <div class="result-stat error"><div class="num" id="errorCount">0</div><div class="label">실패</div></div>
     </div>
+    <div class="report-wrap hidden" id="reportWrap">
+      <div class="report-title">업로드 상세 리포트</div>
+      <div class="report-list" id="reportList"></div>
+    </div>
   </div>
 
+</div>
+<div class="footer">
+  <div>만든이: <a href="https://github.com/nabin3130" target="_blank">nabin3130</a> &nbsp;·&nbsp; v1.2.0</div>
 </div>
 <script>
 const CLIENT_ID = '692428333826-f6hcbspefcb836e0tfmve22l2905pu4i.apps.googleusercontent.com';
@@ -566,7 +616,11 @@ async function uploadCaption(videoId, lang, srtText) {
 async function startUpload() {
   const videoId = document.getElementById('videoId').value.trim();
   const langs = [...selectedLangs];
+  reportItems.length = 0;
+  document.getElementById('reportWrap').classList.add('hidden');
   document.getElementById('btnUpload').disabled=true;
+  document.getElementById('btnUpload').classList.add('loading');
+  document.getElementById('btnUploadText').textContent='업로드 중...';
   document.getElementById('progressWrap').classList.remove('hidden');
   document.getElementById('logWrap').classList.remove('hidden');
   document.getElementById('resultSummary').classList.add('hidden');
@@ -578,8 +632,8 @@ async function startUpload() {
     const lang=langs[i];
     const ytLang=LANG_MAP[lang]||lang;
     updateProgress(step, totalSteps, lang+' 처리 중...');
-    try { await uploadCaption(videoId,ytLang,srtFiles[lang]); addLog('✓ 자막 '+lang+' 성공','ok'); successCount++; }
-    catch(e) { addLog('✗ 자막 '+lang+' 실패: '+e.message,'err'); errorCount++; }
+    try { await uploadCaption(videoId,ytLang,srtFiles[lang]); addLog('✓ 자막 '+lang+' 성공','ok'); addReport(lang, true); successCount++; }
+    catch(e) { addLog('✗ 자막 '+lang+' 실패: '+e.message,'err'); addReport(lang, false, e.message.slice(0,40)); errorCount++; }
     step++; await sleep(500);
   }
 
@@ -594,6 +648,10 @@ async function startUpload() {
   }
 
   updateProgress(totalSteps, totalSteps, '완료!');
+  document.getElementById('btnUpload').classList.remove('loading');
+  document.getElementById('btnUploadText').textContent='업로드 시작';
+  document.getElementById('btnUpload').disabled=false;
+  renderReport();
   if (successCount > 0) launchConfetti();
   document.getElementById('successCount').textContent=successCount;
   document.getElementById('errorCount').textContent=errorCount;
@@ -607,6 +665,41 @@ function addLog(msg,type) {
   wrap.appendChild(line); wrap.scrollTop=wrap.scrollHeight;
 }
 function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// Full screen dropzone
+let dragCounter = 0;
+document.addEventListener('dragenter', e => {
+  dragCounter++;
+  document.getElementById('dropzoneOverlay').classList.add('active');
+});
+document.addEventListener('dragleave', e => {
+  dragCounter--;
+  if (dragCounter === 0) document.getElementById('dropzoneOverlay').classList.remove('active');
+});
+document.addEventListener('drop', e => {
+  dragCounter = 0;
+  document.getElementById('dropzoneOverlay').classList.remove('active');
+});
+document.addEventListener('dragover', e => e.preventDefault());
+
+// Report
+const reportItems = [];
+function addReport(lang, ok, msg='') {
+  reportItems.push({ lang, ok, msg });
+}
+function renderReport() {
+  if (reportItems.length === 0) return;
+  const wrap = document.getElementById('reportWrap');
+  const list = document.getElementById('reportList');
+  wrap.classList.remove('hidden');
+  list.innerHTML = '';
+  reportItems.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'report-item ' + (item.ok ? 'ok' : 'err');
+    div.innerHTML = '<span class="report-status">' + (item.ok ? '✓' : '✗') + '</span><span class="report-lang">' + item.lang + '</span><span class="report-msg">' + (item.msg || (item.ok ? '성공' : '')) + '</span>';
+    list.appendChild(div);
+  });
+}
 
 const FLAG_MAP = {
   'ar':'🇸🇦','zh-hans':'🇨🇳','zh':'🇨🇳','nl':'🇳🇱','en':'🇺🇸','fil':'🇵🇭','fr':'🇫🇷',
