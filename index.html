@@ -193,12 +193,9 @@
 </style>
 </head>
 <body>
-<div style="position:fixed;top:20px;right:20px;display:flex;gap:8px;z-index:100;">
-  <button class="btn-logout-top hidden" id="btnLogoutTop" onclick="handleLogout()">로그아웃</button>
-  <div class="top-controls">
+<div style="position:fixed;top:20px;right:20px;display:flex;align-items:center;gap:8px;z-index:100;">
   <button class="btn-logout-top hidden" id="btnLogoutTop" onclick="handleLogout()">로그아웃</button>
   <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
-</div>
 </div>
 <div class="container">
 
@@ -381,7 +378,6 @@ async function onTokenResponse(resp) {
   const avatar = document.getElementById('userAvatar');
   avatar.innerHTML = '<div style="width:32px;height:32px;background:'+color+';display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-weight:500;font-size:11px;color:white;border-radius:50%;">'+initials+'</div>';
   document.getElementById('badge1').textContent = '✓';
-  document.getElementById('btnLogoutTop').classList.remove('hidden');
   document.getElementById('badge1').classList.add('done');
   document.getElementById('btnLogoutTop').classList.remove('hidden');
   ['cardVideo','cardSrt','cardMeta','cardLang','cardUpload'].forEach(id => document.getElementById(id).classList.remove('disabled'));
