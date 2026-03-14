@@ -337,9 +337,20 @@ function loadGoogleApi() {
 function initGoogleAuth() {
   if (typeof google === 'undefined' || !google.accounts) { setTimeout(initGoogleAuth, 300); return; }
   window.tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: onTokenResponse });
+  // 자동 재인증 시도 (팝업 없이)
+  google.accounts.id.initialize({
+    client_id: CLIENT_ID,
+    callback: onIdTokenResponse,
+    auto_select: true,
+  });
+  google.accounts.id.prompt();
 }
 
 function handleLogin() { window.tokenClient.requestAccessToken(); }
+
+function handleLoginSilent() {
+  window.tokenClient.requestAccessToken({ prompt: '' });
+}
 
 async function onTokenResponse(resp) {
   if (resp.error) return;
@@ -359,6 +370,13 @@ async function onTokenResponse(resp) {
   document.getElementById('badge1').classList.add('done');
   ['cardVideo','cardSrt','cardMeta','cardLang','cardUpload'].forEach(id => document.getElementById(id).classList.remove('disabled'));
   checkReady();
+}
+
+async function onIdTokenResponse(response) {
+  // One Tap 성공 시 access token 요청
+  if (response.credential) {
+    handleLoginSilent();
+  }
 }
 
 function handleLogout() {
