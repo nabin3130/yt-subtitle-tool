@@ -4,126 +4,243 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YT 자막 업로더</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0a0a0a;--surface:#111;--border:#222;--accent:#ff0000;--accent2:#ff4444;--text:#f0f0f0;--muted:#666;--success:#00ff88;--warning:#ffaa00;--error:#ff4444; }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow-x:hidden;}
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,0,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,0,0,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-  .container{max-width:720px;margin:0 auto;padding:40px 24px;position:relative;z-index:1;}
-  .header{display:flex;align-items:center;gap:16px;margin-bottom:48px;padding-bottom:24px;border-bottom:1px solid var(--border);}
-  .logo{width:40px;height:40px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-weight:700;font-size:14px;flex-shrink:0;}
-  .header-text h1{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;}
-  .header-text p{font-size:13px;color:var(--muted);margin-top:2px;}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:16px;transition:border-color 0.2s;}
-  .card:hover{border-color:#333;}
-  .card.disabled{opacity:0.4;pointer-events:none;}
-  .card-title{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
-  .step-badge{width:20px;height:20px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;}
-  .step-badge.done{background:var(--success);color:#000;}
-  .btn-google{display:flex;align-items:center;gap:12px;background:white;color:#333;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Noto Sans KR',sans-serif;}
-  .btn-google:hover{background:#f5f5f5;transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,255,255,0.1);}
-  .btn-google svg{width:18px;height:18px;flex-shrink:0;}
-  .user-info{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.2);border-radius:8px;}
-  .user-avatar{width:32px;height:32px;border-radius:50%;overflow:hidden;}
-  .user-avatar img{width:100%;height:100%;object-fit:cover;}
-  .user-name{font-size:14px;font-weight:600;}
-  .user-email{font-size:12px;color:var(--muted);}
-  .btn-logout{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:all 0.2s;font-family:'Noto Sans KR',sans-serif;}
-  .btn-logout:hover{border-color:var(--error);color:var(--error);}
-  .input-group{margin-bottom:16px;}
-  .input-label{font-size:12px;color:var(--muted);margin-bottom:8px;display:block;font-family:'Space Mono',monospace;}
-  .input{width:100%;background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text);font-size:14px;font-family:'Space Mono',monospace;transition:border-color 0.2s;outline:none;}
-  .input:focus{border-color:var(--accent);}
-  .input::placeholder{color:var(--muted);}
-  .upload-tabs{display:flex;gap:8px;margin-bottom:16px;}
-  .tab-btn{padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all 0.2s;font-family:'Noto Sans KR',sans-serif;}
-  .tab-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
-  .file-drop{border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;}
-  .file-drop:hover,.file-drop.dragover{border-color:var(--accent);background:rgba(255,0,0,0.03);}
-  .file-drop input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;}
-  .file-icon{font-size:32px;margin-bottom:8px;}
-  .file-label{font-size:14px;color:var(--muted);}
-  .file-list{margin-top:16px;display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
-  .file-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#0a0a0a;border:1px solid var(--border);border-radius:6px;}
-  .file-item .lang-tag{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);background:rgba(255,0,0,0.1);padding:2px 8px;border-radius:4px;flex-shrink:0;}
-  .file-item .file-item-name{font-size:12px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .file-item .remove-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 4px;flex-shrink:0;}
-  .file-item .remove-btn:hover{color:var(--error);}
-  .file-summary{margin-top:12px;padding:10px 14px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.15);border-radius:6px;font-size:13px;color:var(--success);font-family:'Space Mono',monospace;}
-  .lang-chips-wrap{display:flex;flex-wrap:wrap;gap:6px;}
-  .lang-chip{padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--muted);font-family:'Noto Sans KR',sans-serif;}
-  .lang-chip:hover{border-color:#444;color:var(--text);}
-  .lang-chip.selected{border-color:var(--accent);color:var(--accent);background:rgba(255,0,0,0.05);}
-  .lang-chip.auto{border-color:var(--success);color:var(--success);background:rgba(0,255,136,0.05);}
-  .btn-upload{width:100%;padding:16px;background:var(--accent);border:none;border-radius:8px;color:white;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:'Space Mono',monospace;letter-spacing:1px;margin-top:8px;}
-  .btn-upload:hover:not(:disabled){background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,0,0,0.3);}
-  .btn-upload:disabled{opacity:0.3;cursor:not-allowed;}
-  .progress-wrap{margin-top:16px;}
-  .progress-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px;}
-  .progress-bar{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s;width:0%;}
-  .progress-text{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
-  .log-wrap{margin-top:16px;max-height:200px;overflow-y:auto;background:#050505;border:1px solid var(--border);border-radius:8px;padding:12px;}
-  .log-wrap::-webkit-scrollbar{width:4px;}
-  .log-wrap::-webkit-scrollbar-thumb{background:var(--border);}
-  .log-line{font-family:'Space Mono',monospace;font-size:11px;padding:2px 0;display:flex;gap:8px;}
-  .log-line .time{color:var(--muted);flex-shrink:0;}
-  .log-line.ok .msg{color:var(--success);}
-  .log-line.err .msg{color:var(--error);}
-  .log-line.info .msg{color:var(--text);}
-  .log-line.warn .msg{color:var(--warning);}
-  .result-summary{display:flex;gap:16px;margin-top:16px;}
-  .result-stat{flex:1;padding:16px;border-radius:8px;text-align:center;}
-  .result-stat.success{background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.2);}
-  .result-stat.error{background:rgba(255,68,68,0.05);border:1px solid rgba(255,68,68,0.2);}
-  .result-stat .num{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;}
-  .result-stat.success .num{color:var(--success);}
-  .result-stat.error .num{color:var(--error);}
-  .result-stat .label{font-size:12px;color:var(--muted);margin-top:4px;}
-  .optional-badge{font-size:10px;color:var(--muted);margin-left:6px;font-weight:400;letter-spacing:0;text-transform:none;}
-  .json-loaded{margin-top:12px;padding:10px 14px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.15);border-radius:6px;font-size:13px;color:var(--success);font-family:'Space Mono',monospace;}
-  .hidden{display:none !important;}
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --border: #e8e8e8;
+    --border-hover: #d0d0d0;
+    --accent: #e00;
+    --accent-light: #fff0f0;
+    --text: #111;
+    --text-2: #555;
+    --text-3: #999;
+    --success: #16a34a;
+    --success-light: #f0fdf4;
+    --success-border: #bbf7d0;
+    --warning: #d97706;
+    --error: #dc2626;
+    --error-light: #fef2f2;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; line-height:1.5; }
+
+  /* Layout */
+  .container { max-width:640px; margin:0 auto; padding:48px 24px 80px; }
+
+  /* Header */
+  .header { display:flex; align-items:center; gap:14px; margin-bottom:40px; }
+  .logo { width:36px; height:36px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .logo svg { width:18px; height:18px; fill:white; }
+  .header-title { font-size:18px; font-weight:600; letter-spacing:-0.3px; }
+  .header-sub { font-size:13px; color:var(--text-3); margin-top:1px; }
+
+  /* Cards */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:12px; box-shadow:var(--shadow-sm); transition:border-color 0.15s, box-shadow 0.15s; }
+  .card:hover { border-color:var(--border-hover); box-shadow:var(--shadow-md); }
+  .card.disabled { opacity:0.45; pointer-events:none; }
+  .card-header { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  .step-num { width:22px; height:22px; border-radius:50%; background:var(--text); color:white; font-family:'DM Mono',monospace; font-size:10px; font-weight:500; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background 0.2s; }
+  .step-num.done { background:var(--success); }
+  .card-title { font-size:13px; font-weight:600; color:var(--text); letter-spacing:0; }
+  .card-desc { font-size:13px; color:var(--text-2); margin-bottom:16px; line-height:1.6; }
+
+  /* Google Button */
+  .btn-google { display:inline-flex; align-items:center; gap:10px; background:white; color:#333; border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 20px; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.15s; font-family:'DM Sans',sans-serif; box-shadow:var(--shadow-sm); }
+  .btn-google:hover { border-color:var(--border-hover); box-shadow:var(--shadow-md); transform:translateY(-1px); }
+  .btn-google svg { width:16px; height:16px; flex-shrink:0; }
+
+  /* User Info */
+  .user-info { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--success-light); border:1px solid var(--success-border); border-radius:var(--radius-sm); }
+  .user-avatar { width:32px; height:32px; border-radius:50%; overflow:hidden; flex-shrink:0; }
+  .user-name { font-size:14px; font-weight:500; }
+  .user-email { font-size:12px; color:var(--text-3); }
+  .btn-logout { margin-left:auto; background:none; border:1px solid var(--border); color:var(--text-3); padding:5px 12px; border-radius:6px; font-size:12px; cursor:pointer; transition:all 0.15s; font-family:'DM Sans',sans-serif; }
+  .btn-logout:hover { border-color:var(--error); color:var(--error); }
+
+  /* Input */
+  .input-label { font-size:12px; font-weight:500; color:var(--text-2); margin-bottom:6px; display:block; font-family:'DM Mono',monospace; letter-spacing:0.3px; }
+  .input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; color:var(--text); font-size:14px; font-family:'DM Mono',monospace; transition:border-color 0.15s, box-shadow 0.15s; outline:none; }
+  .input:focus { border-color:#aaa; box-shadow:0 0 0 3px rgba(0,0,0,0.04); }
+  .input::placeholder { color:var(--text-3); }
+  .input-group { margin-bottom:0; }
+
+  /* Tabs */
+  .tabs { display:flex; gap:4px; margin-bottom:14px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:3px; }
+  .tab-btn { flex:1; padding:7px 12px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; border:none; background:transparent; color:var(--text-3); transition:all 0.15s; font-family:'DM Sans',sans-serif; }
+  .tab-btn.active { background:white; color:var(--text); box-shadow:var(--shadow-sm); }
+
+  /* File Drop */
+  .file-drop { border:1.5px dashed var(--border); border-radius:var(--radius-sm); padding:28px 20px; text-align:center; cursor:pointer; transition:all 0.15s; position:relative; background:var(--bg); }
+  .file-drop:hover, .file-drop.dragover { border-color:#aaa; background:#f5f5f5; }
+  .file-drop input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .file-icon { font-size:28px; margin-bottom:6px; }
+  .file-label { font-size:13px; color:var(--text-3); }
+  .file-label strong { color:var(--text-2); font-weight:500; }
+
+  /* File List */
+  .file-list { margin-top:12px; display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto; }
+  .file-item { display:flex; align-items:center; gap:8px; padding:7px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; }
+  .lang-tag { font-family:'DM Mono',monospace; font-size:11px; color:var(--accent); background:var(--accent-light); padding:2px 7px; border-radius:4px; flex-shrink:0; font-weight:500; }
+  .file-item-name { font-size:12px; color:var(--text-3); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono',monospace; }
+  .remove-btn { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:14px; padding:0 2px; flex-shrink:0; line-height:1; transition:color 0.15s; }
+  .remove-btn:hover { color:var(--error); }
+  .file-summary { margin-top:10px; padding:9px 12px; background:var(--success-light); border:1px solid var(--success-border); border-radius:6px; font-size:12px; color:var(--success); font-family:'DM Mono',monospace; }
+
+  /* JSON loaded */
+  .json-loaded { margin-top:10px; padding:9px 12px; background:var(--success-light); border:1px solid var(--success-border); border-radius:6px; font-size:12px; color:var(--success); font-family:'DM Mono',monospace; }
+
+  /* Lang chips */
+  .lang-chips-wrap { display:flex; flex-wrap:wrap; gap:5px; }
+  .lang-chip { padding:4px 10px; border:1px solid var(--border); border-radius:20px; font-size:11px; cursor:pointer; transition:all 0.15s; background:white; color:var(--text-2); font-family:'DM Mono',monospace; }
+  .lang-chip:hover { border-color:#aaa; color:var(--text); }
+  .lang-chip.selected { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+  .lang-count { font-size:12px; color:var(--text-3); margin-top:10px; font-family:'DM Mono',monospace; }
+
+  /* Optional badge */
+  .optional { font-size:11px; color:var(--text-3); font-weight:400; margin-left:4px; font-family:'DM Sans',sans-serif; letter-spacing:0; text-transform:none; }
+
+  /* Upload button */
+  .btn-upload { width:100%; padding:13px; background:var(--text); border:none; border-radius:var(--radius-sm); color:white; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.15s; font-family:'DM Sans',sans-serif; letter-spacing:-0.2px; margin-top:6px; }
+  .btn-upload:hover:not(:disabled) { background:#333; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+  .btn-upload:disabled { opacity:0.3; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  /* Progress */
+  .progress-wrap { margin-top:14px; }
+  .progress-bar-bg { height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:8px; }
+  .progress-bar { height:100%; background:var(--text); border-radius:2px; transition:width 0.4s ease; width:0%; }
+  .progress-text { font-size:12px; color:var(--text-3); font-family:'DM Mono',monospace; }
+
+  /* Log */
+  .log-wrap { margin-top:14px; max-height:180px; overflow-y:auto; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; }
+  .log-line { font-family:'DM Mono',monospace; font-size:11px; padding:2px 0; display:flex; gap:10px; }
+  .log-line .time { color:var(--text-3); flex-shrink:0; }
+  .log-line.ok .msg { color:var(--success); }
+  .log-line.err .msg { color:var(--error); }
+  .log-line.info .msg { color:var(--text-2); }
+  .log-line.warn .msg { color:var(--warning); }
+
+  /* Result */
+  .result-summary { display:flex; gap:10px; margin-top:14px; }
+  .result-stat { flex:1; padding:14px; border-radius:var(--radius-sm); text-align:center; }
+  .result-stat.success { background:var(--success-light); border:1px solid var(--success-border); }
+  .result-stat.error { background:var(--error-light); border:1px solid #fecaca; }
+  .result-stat .num { font-family:'DM Mono',monospace; font-size:28px; font-weight:500; }
+  .result-stat.success .num { color:var(--success); }
+  .result-stat.error .num { color:var(--error); }
+  .result-stat .label { font-size:12px; color:var(--text-3); margin-top:2px; }
+
+  /* Divider */
+  .divider { height:1px; background:var(--border); margin:20px 0; }
+
+  .hidden { display:none !important; }
+
+  /* Dark mode */
+  body.dark { --bg:#0f0f0f; --surface:#1a1a1a; --border:#2a2a2a; --border-hover:#3a3a3a; --text:#f0f0f0; --text-2:#aaa; --text-3:#666; --accent-light:rgba(220,0,0,0.1); --success-light:rgba(22,163,74,0.1); --success-border:rgba(22,163,74,0.3); --error-light:rgba(220,38,38,0.1); --shadow-sm:0 1px 3px rgba(0,0,0,0.3); --shadow-md:0 4px 16px rgba(0,0,0,0.4); }
+  body.dark .btn-google { background:#222; color:#eee; border-color:#333; }
+  body.dark .input { background:#111; }
+  body.dark .tabs { background:#111; }
+  body.dark .tab-btn.active { background:#2a2a2a; }
+  body.dark .file-drop { background:#111; }
+  body.dark .file-drop:hover { background:#1a1a1a; }
+  body.dark .lang-chip { background:#1a1a1a; }
+  body.dark .lang-chip.selected { background:rgba(220,0,0,0.15); }
+  body.dark .step-num { background:#f0f0f0; color:#111; }
+  body.dark .step-num.done { background:var(--success); color:white; }
+  body.dark .btn-upload { background:#f0f0f0; color:#111; }
+  body.dark .btn-upload:hover:not(:disabled) { background:#ffffff; }
+  body.dark .btn-upload:disabled { background:#333; color:#666; }
+  body.dark .step-num { background:#e0e0e0; color:#111; }
+  body.dark .step-num.done { background:var(--success); color:white; }
+  body.dark .btn-upload:not(:disabled) { background:#e0e0e0; color:#111; }
+  body.dark .btn-upload:not(:disabled):hover { background:#fff; }
+
+  /* Theme toggle */
+  .theme-toggle { position:fixed; top:20px; right:20px; width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:var(--shadow-sm); transition:all 0.2s; z-index:100; }
+  .theme-toggle:hover { box-shadow:var(--shadow-md); transform:scale(1.05); }
+
+  /* Progress % */
+  .progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .progress-pct { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-3); }
+
+  /* Confetti */
+  .confetti-piece { position:fixed; width:8px; height:8px; top:-10px; opacity:0; animation:confettiFall linear forwards; border-radius:2px; pointer-events:none; z-index:999; }
+  @keyframes confettiFall { 0% { transform:translateY(0) rotate(0deg); opacity:1; } 100% { transform:translateY(110vh) rotate(720deg); opacity:0; } }
+
+  /* Fade in animation */
+  .card { animation: fadeUp 0.3s ease both; }
+  .card:nth-child(1) { animation-delay:0s; }
+  .card:nth-child(2) { animation-delay:0.05s; }
+  .card:nth-child(3) { animation-delay:0.1s; }
+  .card:nth-child(4) { animation-delay:0.15s; }
+  .card:nth-child(5) { animation-delay:0.2s; }
+  .card:nth-child(6) { animation-delay:0.25s; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 </style>
 </head>
 <body>
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 <div class="container">
+
   <div class="header">
-    <div class="logo">YT</div>
-    <div class="header-text">
-      <h1>자막 업로더</h1>
-      <p>YouTube 다국어 자막 · 제목 · 설명 자동 업로드</p>
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+    </div>
+    <div>
+      <div class="header-title">자막 업로더</div>
+      <div class="header-sub">YouTube 다국어 자막 · 제목 · 설명 업로드</div>
     </div>
   </div>
 
+  <!-- STEP 1 -->
   <div class="card" id="cardLogin">
-    <div class="card-title"><div class="step-badge" id="badge1">1</div>YouTube 계정 연결</div>
+    <div class="card-header">
+      <div class="step-num" id="badge1">1</div>
+      <div class="card-title">YouTube 계정 연결</div>
+    </div>
     <div id="loginArea">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">본인의 YouTube 채널에 자막을 업로드하려면 Google 계정으로 로그인하세요.</p>
+      <p class="card-desc">Google 계정으로 로그인해서 채널에 자막을 업로드하세요.</p>
       <button class="btn-google" onclick="handleLogin()">
         <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        Google 계정으로 로그인
+        Google로 로그인
       </button>
     </div>
     <div id="loggedInArea" class="hidden">
       <div class="user-info">
-        <div class="user-avatar"><img id="userAvatar" src="" alt=""></div>
-        <div><div class="user-name" id="userName"></div><div class="user-email" id="userEmail"></div></div>
+        <div class="user-avatar" id="userAvatar"></div>
+        <div>
+          <div class="user-name" id="userName"></div>
+          <div class="user-email" id="userEmail"></div>
+        </div>
         <button class="btn-logout" onclick="handleLogout()">로그아웃</button>
       </div>
     </div>
   </div>
 
+  <!-- STEP 2 -->
   <div class="card disabled" id="cardVideo">
-    <div class="card-title"><div class="step-badge" id="badge2">2</div>영상 ID 입력</div>
+    <div class="card-header">
+      <div class="step-num" id="badge2">2</div>
+      <div class="card-title">영상 ID 입력</div>
+    </div>
     <div class="input-group">
-      <label class="input-label">YOUTUBE VIDEO ID</label>
-      <input class="input" id="videoId" placeholder="예: dQw4w9WgXcQ 또는 URL 전체 붙여넣기" oninput="onVideoIdChange()">
+      <label class="input-label">VIDEO ID</label>
+      <input class="input" id="videoId" placeholder="dQw4w9WgXcQ 또는 URL 전체 붙여넣기" oninput="onVideoIdChange()">
     </div>
   </div>
 
+  <!-- STEP 3 -->
   <div class="card disabled" id="cardSrt">
-    <div class="card-title"><div class="step-badge" id="badge3">3</div>SRT 자막 파일 업로드</div>
-    <div class="upload-tabs">
+    <div class="card-header">
+      <div class="step-num" id="badge3">3</div>
+      <div class="card-title">SRT 자막 파일</div>
+    </div>
+    <div class="tabs">
       <button class="tab-btn active" id="tabZip" onclick="switchTab('zip')">📦 ZIP 파일</button>
       <button class="tab-btn" id="tabMulti" onclick="switchTab('multi')">📄 개별 파일</button>
     </div>
@@ -131,14 +248,14 @@
       <div class="file-drop" id="fileDropZip" ondragover="onDragOver(event,'zip')" ondragleave="onDragLeave('zip')" ondrop="onDrop(event,'zip')">
         <input type="file" accept=".zip" onchange="onZipSelect(event)">
         <div class="file-icon">📦</div>
-        <div class="file-label">ZIP 파일을 드래그하거나 클릭</div>
+        <div class="file-label"><strong>클릭</strong>하거나 드래그해서 ZIP 업로드</div>
       </div>
     </div>
     <div id="panelMulti" class="hidden">
       <div class="file-drop" id="fileDropMulti" ondragover="onDragOver(event,'multi')" ondragleave="onDragLeave('multi')" ondrop="onDrop(event,'multi')">
         <input type="file" accept=".srt" multiple onchange="onMultiSelect(event)">
         <div class="file-icon">📄</div>
-        <div class="file-label">SRT 파일들을 드래그하거나 클릭</div>
+        <div class="file-label"><strong>클릭</strong>하거나 드래그해서 SRT 업로드</div>
       </div>
     </div>
     <div id="fileListWrap" class="hidden">
@@ -147,36 +264,44 @@
     </div>
   </div>
 
+  <!-- STEP 4 -->
   <div class="card disabled" id="cardMeta">
-    <div class="card-title">
-      <div class="step-badge" id="badge4">4</div>
-      제목 · 설명 JSON 업로드
-      <span class="optional-badge">(선택사항)</span>
+    <div class="card-header">
+      <div class="step-num" id="badge4">4</div>
+      <div class="card-title">제목 · 설명 JSON <span class="optional">선택사항</span></div>
     </div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
-      Claude에게 제목/설명 번역을 요청하면 JSON 파일을 만들어줘요.<br>
-      없으면 건너뛰고 자막만 업로드돼요.
-    </p>
+    <p class="card-desc">Claude에게 번역을 요청하면 JSON 파일을 만들어줘요. 없으면 자막만 업로드돼요.</p>
     <div class="file-drop" id="fileDropJson" ondragover="onDragOver(event,'json')" ondragleave="onDragLeave('json')" ondrop="onDrop(event,'json')">
       <input type="file" accept=".json" onchange="onJsonSelect(event)">
       <div class="file-icon">📋</div>
-      <div class="file-label">JSON 파일을 드래그하거나 클릭</div>
+      <div class="file-label"><strong>클릭</strong>하거나 드래그해서 JSON 업로드</div>
     </div>
     <div id="jsonLoaded" class="json-loaded hidden"></div>
   </div>
 
+  <!-- STEP 5 -->
   <div class="card disabled" id="cardLang">
-    <div class="card-title"><div class="step-badge" id="badge5">5</div>업로드할 언어 확인</div>
+    <div class="card-header">
+      <div class="step-num" id="badge5">5</div>
+      <div class="card-title">언어 확인</div>
+    </div>
     <div class="lang-chips-wrap" id="langChips"></div>
-    <p style="font-size:12px;color:var(--muted);margin-top:12px;">선택된 언어: <strong id="selectedCount">0</strong>개</p>
+    <div class="lang-count">선택된 언어: <strong id="selectedCount">0</strong>개</div>
   </div>
 
+  <!-- STEP 6 -->
   <div class="card disabled" id="cardUpload">
-    <div class="card-title"><div class="step-badge" id="badge6">6</div>업로드 시작</div>
-    <button class="btn-upload" id="btnUpload" onclick="startUpload()" disabled>🚀 업로드 시작</button>
+    <div class="card-header">
+      <div class="step-num" id="badge6">6</div>
+      <div class="card-title">업로드</div>
+    </div>
+    <button class="btn-upload" id="btnUpload" onclick="startUpload()" disabled>업로드 시작</button>
     <div class="progress-wrap hidden" id="progressWrap">
+      <div class="progress-header">
+        <div class="progress-text" id="progressText">준비 중...</div>
+        <div class="progress-pct" id="progressPct">0%</div>
+      </div>
       <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
-      <div class="progress-text" id="progressText">준비 중...</div>
     </div>
     <div class="log-wrap hidden" id="logWrap"></div>
     <div class="result-summary hidden" id="resultSummary">
@@ -184,8 +309,8 @@
       <div class="result-stat error"><div class="num" id="errorCount">0</div><div class="label">실패</div></div>
     </div>
   </div>
-</div>
 
+</div>
 <script>
 const CLIENT_ID = '692428333826-f6hcbspefcb836e0tfmve22l2905pu4i.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/youtube.force-ssl';
@@ -226,10 +351,10 @@ async function onTokenResponse(resp) {
   document.getElementById('userName').textContent = u.name;
   document.getElementById('userEmail').textContent = u.email;
   const initials = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-  const colors = ['#ff4444','#ff6b35','#f7931e','#00b894','#0984e3','#6c5ce7','#e84393'];
-  const color = colors[Math.floor(Math.random()*colors.length)];
+  const colors = ['#e00','#e67e22','#16a34a','#0984e3','#6c5ce7','#e84393'];
+  const color = colors[u.name.length % colors.length];
   const avatar = document.getElementById('userAvatar');
-  avatar.innerHTML = '<div style="width:100%;height:100%;background:'+color+';display:flex;align-items:center;justify-content:center;font-family:Space Mono,monospace;font-weight:700;font-size:12px;color:white;border-radius:50%;">'+initials+'</div>';
+  avatar.innerHTML = '<div style="width:32px;height:32px;background:'+color+';display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-weight:500;font-size:11px;color:white;border-radius:50%;">'+initials+'</div>';
   document.getElementById('badge1').textContent = '✓';
   document.getElementById('badge1').classList.add('done');
   ['cardVideo','cardSrt','cardMeta','cardLang','cardUpload'].forEach(id => document.getElementById(id).classList.remove('disabled'));
@@ -277,7 +402,7 @@ function processJson(file) {
       metaData = JSON.parse(e.target.result);
       const langCount = Object.keys(metaData).length;
       const el = document.getElementById('jsonLoaded');
-      el.textContent = 'OK ' + file.name + ' 로드됨 - ' + langCount + '개 언어';
+      el.textContent = '✓ ' + file.name + ' — ' + langCount + '개 언어 로드됨';
       el.classList.remove('hidden');
       document.getElementById('badge4').textContent = '✓';
       document.getElementById('badge4').classList.add('done');
@@ -344,6 +469,7 @@ function loadSrtMap(map) {
     listEl.appendChild(item);
   });
   document.getElementById('fileListWrap').classList.remove('hidden');
+  document.getElementById('fileSummary').textContent = '✓ ' + Object.keys(map).length + '개 파일 로드됨';
   document.getElementById('badge3').textContent='✓'; document.getElementById('badge3').classList.add('done');
   buildLangChips(); checkReady();
 }
@@ -353,8 +479,8 @@ function removeLang(l) { delete srtFiles[l]; selectedLangs.delete(l); loadSrtMap
 function buildLangChips() {
   const wrap=document.getElementById('langChips'); wrap.innerHTML='';
   [...selectedLangs].sort().forEach(l => {
-    const chip=document.createElement('button'); chip.className='lang-chip auto selected'; chip.textContent=l;
-    chip.onclick=()=>{ selectedLangs.delete(l); chip.remove(); updateLangCount(); checkReady(); };
+    const chip=document.createElement('button'); chip.className='lang-chip selected'; chip.textContent=l;
+    chip.onclick=()=>{ selectedLangs.delete(l); chip.classList.remove('selected'); updateLangCount(); checkReady(); };
     wrap.appendChild(chip);
   });
   updateLangCount();
@@ -421,26 +547,24 @@ async function startUpload() {
   for (let i=0; i<langs.length; i++) {
     const lang=langs[i];
     const ytLang=LANG_MAP[lang]||lang;
-    document.getElementById('progressBar').style.width=Math.round((step/totalSteps)*100)+'%';
-    document.getElementById('progressText').textContent='[자막] '+lang+' 처리 중...';
-    try { await uploadCaption(videoId,ytLang,srtFiles[lang]); addLog('OK 자막 '+lang+' 성공','ok'); successCount++; }
-    catch(e) { addLog('FAIL 자막 '+lang+' 실패: '+e.message,'err'); errorCount++; }
+    updateProgress(step, totalSteps, lang+' 처리 중...');
+    try { await uploadCaption(videoId,ytLang,srtFiles[lang]); addLog('✓ 자막 '+lang+' 성공','ok'); successCount++; }
+    catch(e) { addLog('✗ 자막 '+lang+' 실패: '+e.message,'err'); errorCount++; }
     step++; await sleep(500);
   }
 
   if (metaData) {
-    document.getElementById('progressBar').style.width=Math.round((step/totalSteps)*100)+'%';
-    document.getElementById('progressText').textContent='제목/설명 업로드 중...';
+    updateProgress(step, totalSteps, '제목/설명 업로드 중...');
     try {
       await uploadLocalizations(videoId, metaData);
-      addLog('OK 제목/설명 업로드 성공 ('+Object.keys(metaData).length+'개 언어)','ok');
+      addLog('✓ 제목/설명 '+Object.keys(metaData).length+'개 언어 성공','ok');
       successCount++;
-    } catch(e) { addLog('FAIL 제목/설명 업로드 실패: '+e.message,'err'); errorCount++; }
+    } catch(e) { addLog('✗ 제목/설명 실패: '+e.message,'err'); errorCount++; }
     step++;
   }
 
-  document.getElementById('progressBar').style.width='100%';
-  document.getElementById('progressText').textContent='완료!';
+  updateProgress(totalSteps, totalSteps, '완료!');
+  if (successCount > 0) launchConfetti();
   document.getElementById('successCount').textContent=successCount;
   document.getElementById('errorCount').textContent=errorCount;
   document.getElementById('resultSummary').classList.remove('hidden');
@@ -453,6 +577,75 @@ function addLog(msg,type) {
   wrap.appendChild(line); wrap.scrollTop=wrap.scrollHeight;
 }
 function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+const FLAG_MAP = {
+  'ar':'🇸🇦','zh-hans':'🇨🇳','zh':'🇨🇳','nl':'🇳🇱','en':'🇺🇸','fil':'🇵🇭','fr':'🇫🇷',
+  'de':'🇩🇪','hi':'🇮🇳','id':'🇮🇩','it':'🇮🇹','ja':'🇯🇵','ko':'🇰🇷','ms':'🇲🇾',
+  'fa':'🇮🇷','pl':'🇵🇱','pt':'🇧🇷','ru':'🇷🇺','es':'🇪🇸','th':'🇹🇭','tr':'🇹🇷',
+  'uk':'🇺🇦','vi':'🇻🇳',
+  'arabic':'🇸🇦','chinese':'🇨🇳','chinese_simplified':'🇨🇳','dutch':'🇳🇱','english':'🇺🇸',
+  'filipino':'🇵🇭','french':'🇫🇷','german':'🇩🇪','hindi':'🇮🇳','indonesian':'🇮🇩',
+  'italian':'🇮🇹','japanese':'🇯🇵','korean':'🇰🇷','malay':'🇲🇾','persian':'🇮🇷',
+  'polish':'🇵🇱','portuguese':'🇧🇷','russian':'🇷🇺','spanish':'🇪🇸','thai':'🇹🇭',
+  'turkish':'🇹🇷','ukrainian':'🇺🇦','vietnamese':'🇻🇳'
+};
+
+function getFlag(lang) { return FLAG_MAP[lang.toLowerCase()] || '🌐'; }
+
+// Override buildLangChips to include flags
+function buildLangChips() {
+  const wrap=document.getElementById('langChips'); wrap.innerHTML='';
+  [...selectedLangs].sort().forEach(l => {
+    const flag = getFlag(l);
+    const chip=document.createElement('button'); chip.className='lang-chip selected';
+    chip.textContent = flag + ' ' + l;
+    chip.onclick=()=>{ selectedLangs.delete(l); chip.classList.remove('selected'); updateLangCount(); checkReady(); };
+    wrap.appendChild(chip);
+  });
+  updateLangCount();
+}
+
+// Theme toggle
+function toggleTheme() {
+  const dark = document.body.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent = dark ? '☀️' : '🌙';
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+}
+(function() {
+  if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.textContent = '☀️';
+    });
+  }
+})();
+
+// Progress % update
+function updateProgress(step, total, text) {
+  const pct = Math.round((step / total) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = text;
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+// Confetti
+function launchConfetti() {
+  const colors = ['#e00','#f7931e','#16a34a','#0984e3','#6c5ce7','#e84393','#f0c300'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    el.style.animationDelay = Math.random() * 0.5 + 's';
+    el.style.width = (6 + Math.random() * 6) + 'px';
+    el.style.height = (6 + Math.random() * 10) + 'px';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
 </script>
 </body>
 </html>
