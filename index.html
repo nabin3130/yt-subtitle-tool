@@ -423,7 +423,7 @@ async function onTokenResponse(resp) {
   document.getElementById('loggedInArea').classList.remove('hidden');
   document.getElementById('userName').textContent = u.name;
   document.getElementById('userEmail').textContent = u.email;
-  const initials = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  const initials = (u.name || u.email || '?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   const colors = ['#e00','#e67e22','#16a34a','#0984e3','#6c5ce7','#e84393'];
   const color = colors[u.name.length % colors.length];
   const avatar = document.getElementById('userAvatar');
@@ -433,6 +433,7 @@ async function onTokenResponse(resp) {
   document.getElementById('btnLogoutTop').classList.remove('hidden');
   ['cardVideo','cardSrt','cardMeta','cardLang','cardUpload'].forEach(id => document.getElementById(id).classList.remove('disabled'));
   checkReady();
+  } catch(e) { console.error('Login error:', e); }
 }
 
 async function onIdTokenResponse(response) {
