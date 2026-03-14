@@ -667,18 +667,21 @@ function addLog(msg,type) {
 }
 function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 
-// Full screen dropzone
-let dragCounter = 0;
+// Full screen dropzone - only show when dragging files from outside
+let dragTimer;
 document.addEventListener('dragenter', e => {
-  dragCounter++;
+  if (!e.dataTransfer.types.includes('Files')) return;
+  clearTimeout(dragTimer);
   document.getElementById('dropzoneOverlay').classList.add('active');
 });
 document.addEventListener('dragleave', e => {
-  dragCounter--;
-  if (dragCounter === 0) document.getElementById('dropzoneOverlay').classList.remove('active');
+  clearTimeout(dragTimer);
+  dragTimer = setTimeout(() => {
+    document.getElementById('dropzoneOverlay').classList.remove('active');
+  }, 100);
 });
 document.addEventListener('drop', e => {
-  dragCounter = 0;
+  clearTimeout(dragTimer);
   document.getElementById('dropzoneOverlay').classList.remove('active');
 });
 document.addEventListener('dragover', e => e.preventDefault());
