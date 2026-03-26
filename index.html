@@ -75,6 +75,12 @@
   .user-name { font-size:14px; font-weight:500; }
   .user-email { font-size:12px; color:var(--text-3); }
 
+  /* Token expired banner */
+  .token-expired-banner { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff7ed; border:1px solid #fed7aa; border-radius:var(--radius-sm); margin-top:10px; }
+  body.dark .token-expired-banner { background:rgba(217,119,6,0.1); border-color:rgba(217,119,6,0.3); }
+  .token-expired-banner .msg { font-size:13px; color:var(--warning); flex:1; }
+  .btn-relogin { background:var(--warning); color:white; border:none; border-radius:6px; padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
+
   /* Input */
   .input-label { font-size:11px; font-weight:500; color:var(--text-3); margin-bottom:6px; display:block; font-family:'DM Mono',monospace; letter-spacing:0.5px; }
   .input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 13px; color:var(--text); font-size:14px; font-family:'DM Mono',monospace; outline:none; transition:border-color 0.15s, box-shadow 0.15s; }
@@ -220,6 +226,11 @@
           <div class="user-email" id="userEmail"></div>
         </div>
       </div>
+      <!-- Token expired warning (shown when saved token has expired) -->
+      <div id="tokenExpiredBanner" class="token-expired-banner hidden">
+        <span class="msg">⚠️ 로그인 세션이 만료됐어요. 다시 로그인해주세요.</span>
+        <button class="btn-relogin" onclick="handleLogin()">다시 로그인</button>
+      </div>
     </div>
   </div>
 
@@ -237,8 +248,9 @@
   <div class="card disabled" id="cardSrt">
     <div class="card-header">
       <div class="step-num" id="badge3">3</div>
-      <div class="card-title">SRT 자막 파일</div>
+      <div class="card-title">SRT 자막 파일 <span class="optional">선택사항</span></div>
     </div>
+    <p class="card-desc">JSON으로 제목/설명만 업로드하는 경우 이 단계는 건너뛸 수 있어요.</p>
     <div class="tabs">
       <button class="tab-btn active" id="tabZip" onclick="switchTab('zip')">📦 ZIP 파일</button>
       <button class="tab-btn" id="tabMulti" onclick="switchTab('multi')">📄 개별 파일</button>
@@ -318,7 +330,7 @@
 </div>
 
 <div class="footer">
-  만든이: <a href="https://github.com/nabin3130" target="_blank">nabin3130</a> &nbsp;·&nbsp; v1.2.0
+  만든이: <a href="https://github.com/nabin3130" target="_blank">nabin3130</a> &nbsp;·&nbsp; v1.3.0
 </div>
 
 <script>
@@ -354,7 +366,7 @@ const FLAG_MAP = {
   "ukrainian":"🇺🇦","vietnamese":"🇻🇳"
 };
 
-// Theme
+// ─── Theme ───────────────────────────────────────────────────────────────────
 (function() {
   if (localStorage.getItem('theme') === 'dark') {
     document.body.classList.add('dark');
@@ -374,7 +386,7 @@ function toggleTheme() {
   localStorage.setItem('theme', dark ? 'dark' : 'light');
 }
 
-// Drag overlay
+// ─── Drag overlay ─────────────────────────────────────────────────────────────
 let dragTimer;
 document.addEventListener('dragenter', function(e) {
   if (!e.dataTransfer || !e.dataTransfer.types.includes('Files')) return;
@@ -393,7 +405,32 @@ document.addEventListener('drop', function(e) {
 });
 document.addEventListener('dragover', function(e) { e.preventDefault(); });
 
-// Google Auth
+// ─── Token persistence helpers ───────────────────────────────────────────────
+function saveToken(token) {
+  // Google access tokens last ~1 hour. Store with expiry timestamp.
+  const expiry = Date.now() + 55 * 60 * 1000; // 55 min to be safe
+  localStorage.setItem('yt_token', token);
+  localStorage.setItem('yt_token_expiry', expiry);
+}
+
+function loadSavedToken() {
+  const token = localStorage.getItem('yt_token');
+  const expiry = parseInt(localStorage.getItem('yt_token_expiry') || '0', 10);
+  if (token && Date.now() < expiry) return token;
+  return null;
+}
+
+function clearSavedToken() {
+  localStorage.removeItem('yt_token');
+  localStorage.removeItem('yt_token_expiry');
+}
+
+function isTokenExpired() {
+  const expiry = parseInt(localStorage.getItem('yt_token_expiry') || '0', 10);
+  return expiry && Date.now() >= expiry;
+}
+
+// ─── Google Auth ──────────────────────────────────────────────────────────────
 function loadGoogleApi() {
   var s = document.createElement('script');
   s.src = 'https://accounts.google.com/gsi/client';
@@ -404,11 +441,52 @@ function loadGoogleApi() {
 
 function initGoogleAuth() {
   if (typeof google === 'undefined' || !google.accounts) { setTimeout(initGoogleAuth, 300); return; }
+
   window.tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID, scope: SCOPES, callback: onTokenResponse
   });
+
+  // Try to restore session from localStorage
+  const saved = loadSavedToken();
+  if (saved) {
+    // We have a saved token — restore UI without re-prompting
+    accessToken = saved;
+    restoreSessionFromStorage();
+    return;
+  }
+
+  // No saved token — try silent One Tap
   google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onOneTap, auto_select: true });
   google.accounts.id.prompt();
+}
+
+async function restoreSessionFromStorage() {
+  // Verify the token is still valid by hitting userinfo
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    if (!r.ok) throw new Error('token invalid');
+    const u = await r.json();
+    showLoggedInUI(u);
+  } catch(e) {
+    // Token silently expired or revoked — show expired banner
+    clearSavedToken();
+    accessToken = null;
+    const savedName = localStorage.getItem('yt_user_name');
+    const savedEmail = localStorage.getItem('yt_user_email');
+    if (savedName || savedEmail) {
+      // Show who was logged in + expired notice
+      document.getElementById('loginArea').classList.add('hidden');
+      document.getElementById('loggedInArea').classList.remove('hidden');
+      document.getElementById('userName').textContent = savedName || '';
+      document.getElementById('userEmail').textContent = savedEmail || '';
+      renderAvatar(savedName || savedEmail || 'U');
+      document.getElementById('tokenExpiredBanner').classList.remove('hidden');
+      document.getElementById('btnLogoutTop').classList.remove('hidden');
+    }
+    // Keep cards disabled since token is invalid
+  }
 }
 
 function handleLogin() { window.tokenClient.requestAccessToken(); }
@@ -420,36 +498,55 @@ function onOneTap(resp) {
 async function onTokenResponse(resp) {
   if (resp.error) return;
   accessToken = resp.access_token;
+  saveToken(accessToken);
   try {
     const r = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: 'Bearer ' + accessToken }
     });
     const u = await r.json();
-    document.getElementById('loginArea').classList.add('hidden');
-    document.getElementById('loggedInArea').classList.remove('hidden');
-    document.getElementById('userName').textContent = u.name || '';
-    document.getElementById('userEmail').textContent = u.email || '';
-    const name = u.name || u.email || 'U';
-    const initials = name.split(' ').map(function(n) { return n[0]; }).join('').toUpperCase().slice(0, 2);
-    const colors = ['#e00','#e67e22','#16a34a','#0984e3','#6c5ce7','#e84393'];
-    const color = colors[name.length % colors.length];
-    document.getElementById('userAvatar').innerHTML =
-      '<div style="width:30px;height:30px;background:' + color + ';border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:11px;font-weight:500;color:white;">' + initials + '</div>';
-    document.getElementById('badge1').textContent = '✓';
-    document.getElementById('badge1').classList.add('done');
-    document.getElementById('btnLogoutTop').classList.remove('hidden');
-    ['cardVideo','cardSrt','cardMeta','cardLang','cardUpload'].forEach(function(id) {
-      document.getElementById(id).classList.remove('disabled');
-    });
-    checkReady();
+    localStorage.setItem('yt_user_name', u.name || '');
+    localStorage.setItem('yt_user_email', u.email || '');
+    showLoggedInUI(u);
   } catch(e) { console.error('userinfo error', e); }
 }
 
+function showLoggedInUI(u) {
+  document.getElementById('loginArea').classList.add('hidden');
+  document.getElementById('loggedInArea').classList.remove('hidden');
+  document.getElementById('tokenExpiredBanner').classList.add('hidden');
+  document.getElementById('userName').textContent = u.name || '';
+  document.getElementById('userEmail').textContent = u.email || '';
+  renderAvatar(u.name || u.email || 'U');
+  document.getElementById('badge1').textContent = '✓';
+  document.getElementById('badge1').classList.add('done');
+  document.getElementById('btnLogoutTop').classList.remove('hidden');
+  ['cardVideo','cardSrt','cardMeta','cardLang','cardUpload'].forEach(function(id) {
+    document.getElementById(id).classList.remove('disabled');
+  });
+  // btnUpload starts disabled until content is loaded
+  document.getElementById('btnUpload').disabled = true;
+  checkReady();
+}
+
+function renderAvatar(name) {
+  const initials = name.split(' ').map(function(n) { return n[0]; }).join('').toUpperCase().slice(0, 2);
+  const colors = ['#e00','#e67e22','#16a34a','#0984e3','#6c5ce7','#e84393'];
+  const color = colors[name.length % colors.length];
+  document.getElementById('userAvatar').innerHTML =
+    '<div style="width:30px;height:30px;background:' + color + ';border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:11px;font-weight:500;color:white;">' + initials + '</div>';
+}
+
 function handleLogout() {
-  if (accessToken) google.accounts.oauth2.revoke(accessToken, function() {});
+  if (accessToken && typeof google !== 'undefined') {
+    google.accounts.oauth2.revoke(accessToken, function() {});
+  }
+  clearSavedToken();
+  localStorage.removeItem('yt_user_name');
+  localStorage.removeItem('yt_user_email');
   location.reload();
 }
 
+// ─── Video ID ─────────────────────────────────────────────────────────────────
 function onVideoIdChange() {
   var val = document.getElementById('videoId').value.trim();
   var match = val.match(/[?&]v=([^&]+)/);
@@ -457,6 +554,7 @@ function onVideoIdChange() {
   checkReady();
 }
 
+// ─── Tab switch ───────────────────────────────────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
   document.getElementById('tabZip').classList.toggle('active', tab === 'zip');
@@ -465,6 +563,7 @@ function switchTab(tab) {
   document.getElementById('panelMulti').classList.toggle('hidden', tab !== 'multi');
 }
 
+// ─── Drag & Drop ──────────────────────────────────────────────────────────────
 function onDragOver(e, type) { e.preventDefault(); }
 function onDragLeave(type) {}
 function onDrop(e, type) {
@@ -479,6 +578,7 @@ function onZipSelect(e) { if (e.target.files[0]) processZip(e.target.files[0]); 
 function onMultiSelect(e) { processSrtFiles(Array.from(e.target.files)); }
 function onJsonSelect(e) { if (e.target.files[0]) processJson(e.target.files[0]); }
 
+// ─── JSON ─────────────────────────────────────────────────────────────────────
 function processJson(file) {
   var r = new FileReader();
   r.onload = function(e) {
@@ -489,11 +589,16 @@ function processJson(file) {
       el.classList.remove('hidden');
       document.getElementById('badge4').textContent = '✓';
       document.getElementById('badge4').classList.add('done');
+      // Add JSON language keys into selectedLangs (merge with any SRT langs)
+      Object.keys(metaData).forEach(function(l) { selectedLangs.add(l); });
+      buildLangChips();
+      checkReady();
     } catch(err) { alert('JSON 형식이 올바르지 않아요.'); }
   };
   r.readAsText(file, 'UTF-8');
 }
 
+// ─── ZIP ──────────────────────────────────────────────────────────────────────
 async function processZip(file) {
   try {
     var buf = await file.arrayBuffer();
@@ -533,6 +638,7 @@ async function processZip(file) {
   } catch(e) { alert('ZIP 오류: ' + e.message); }
 }
 
+// ─── SRT files ────────────────────────────────────────────────────────────────
 function processSrtFiles(files) {
   var found = {}; var loaded = 0;
   files.forEach(function(f) {
@@ -546,7 +652,8 @@ function processSrtFiles(files) {
 }
 
 function loadSrtMap(map) {
-  srtFiles = map; selectedLangs = new Set(Object.keys(map));
+  srtFiles = map;
+  selectedLangs = new Set(Object.keys(map));
   var listEl = document.getElementById('fileList'); listEl.innerHTML = '';
   Object.keys(map).forEach(function(l) {
     var item = document.createElement('div'); item.className = 'file-item';
@@ -557,13 +664,29 @@ function loadSrtMap(map) {
   document.getElementById('fileSummary').textContent = '✓ ' + Object.keys(map).length + '개 파일 로드됨';
   document.getElementById('badge3').textContent = '✓';
   document.getElementById('badge3').classList.add('done');
-  buildLangChips(); checkReady();
+  rebuildLangState(); checkReady();
 }
 
 function removeLang(l) { delete srtFiles[l]; selectedLangs.delete(l); loadSrtMap(srtFiles); }
 
+// ─── Lang state: merge SRT langs + JSON langs ────────────────────────────────
+function rebuildLangState() {
+  // Start from SRT langs
+  var langs = new Set(Object.keys(srtFiles));
+  // Add JSON langs if present (JSON-only upload case)
+  if (metaData) {
+    Object.keys(metaData).forEach(function(l) { langs.add(l); });
+  }
+  selectedLangs = langs;
+  buildLangChips();
+}
+
 function buildLangChips() {
   var wrap = document.getElementById('langChips'); wrap.innerHTML = '';
+  if (selectedLangs.size === 0) {
+    wrap.innerHTML = '<span style="font-size:12px;color:var(--text-3);font-family:DM Mono,monospace;">SRT 또는 JSON 파일을 먼저 올려주세요.</span>';
+    updateLangCount(); return;
+  }
   Array.from(selectedLangs).sort().forEach(function(l) {
     var flag = FLAG_MAP[l.toLowerCase()] || '🌐';
     var chip = document.createElement('button'); chip.className = 'lang-chip selected';
@@ -576,11 +699,15 @@ function buildLangChips() {
 
 function updateLangCount() { document.getElementById('selectedCount').textContent = selectedLangs.size; }
 
+// ─── Ready check ─────────────────────────────────────────────────────────────
 function checkReady() {
-  var ready = accessToken && document.getElementById('videoId').value.trim() && selectedLangs.size > 0;
+  var hasContent = Object.keys(srtFiles).length > 0 || metaData !== null;
+  var hasVideoId = document.getElementById('videoId').value.trim().length > 0;
+  var ready = !!accessToken && hasVideoId && hasContent;
   document.getElementById('btnUpload').disabled = !ready;
 }
 
+// ─── Upload helpers ───────────────────────────────────────────────────────────
 function updateProgress(step, total, text) {
   var pct = total > 0 ? Math.round((step / total) * 100) : 0;
   document.getElementById('progressBar').style.width = pct + '%';
@@ -629,9 +756,11 @@ async function uploadCaption(videoId, lang, srtText) {
   return data;
 }
 
+// ─── Main upload ──────────────────────────────────────────────────────────────
 async function startUpload() {
   var videoId = document.getElementById('videoId').value.trim();
-  var langs = Array.from(selectedLangs);
+  // SRT langs to upload (only ones that have SRT data)
+  var srtLangs = Array.from(selectedLangs).filter(function(l) { return srtFiles[l]; });
   reportItems.length = 0;
   document.getElementById('btnUpload').disabled = true;
   document.getElementById('btnUpload').classList.add('loading');
@@ -641,11 +770,12 @@ async function startUpload() {
   document.getElementById('resultSummary').classList.add('hidden');
   document.getElementById('reportWrap').classList.add('hidden');
   var successCount = 0, errorCount = 0;
-  var totalSteps = langs.length + (metaData ? 1 : 0);
+  var totalSteps = srtLangs.length + (metaData ? 1 : 0);
   var step = 0;
 
-  for (var i = 0; i < langs.length; i++) {
-    var lang = langs[i];
+  // Upload SRT captions
+  for (var i = 0; i < srtLangs.length; i++) {
+    var lang = srtLangs[i];
     var ytLang = LANG_MAP[lang] || lang;
     updateProgress(step, totalSteps, lang + ' 처리 중...');
     try {
@@ -662,6 +792,7 @@ async function startUpload() {
     await sleep(500);
   }
 
+  // Upload JSON localizations (title/description)
   if (metaData) {
     updateProgress(step, totalSteps, '제목/설명 업로드 중...');
     try {
