@@ -24,6 +24,7 @@ AI Translation → Subtitle Files → ZIP Archive → Upload → Automatic YouTu
 - CSS
 - JavaScript
 - YouTube API
+- GitHub Pages
 
 ## Why I built this
 
