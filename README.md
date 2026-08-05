@@ -1,6 +1,6 @@
 # YouTube Subtitle Tool
 
-<img width="1425" height="759" alt="yt-subtitle-tool" src="https://github.com/user-attachments/assets/392bb8f6-307f-4fd0-987a-112807d120e5" />
+<img width="315" height="622" alt="yt-subtitle-tool" src="https://github.com/user-attachments/assets/f8476338-4f26-4ee3-ba77-5419e4dbea00" />
 
 A browser-based tool that streamlines multilingual subtitle creation and editing for YouTube content.
 
