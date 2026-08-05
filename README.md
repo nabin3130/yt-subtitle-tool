@@ -6,8 +6,6 @@ A web tool that automates multilingual subtitle uploads to YouTube, eliminating 
 
 The workflow is simple: translate subtitles with AI, package them into a ZIP file, upload the archive, and let the tool handle the rest.
 
-![YouTube Subtitle Uploader](assets/homepage.png)
-
 ## Workflow
 
 AI Translation → Subtitle Files → ZIP Archive → Upload → Automatic YouTube Subtitle Import
@@ -35,4 +33,4 @@ I built this tool to automate that process. By packaging translated subtitle fil
 
 ## Live Demo
 
-Add your live demo URL here.
+https://yt-subtitle-tool2.pages.dev/
