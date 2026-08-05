@@ -1,30 +1,38 @@
-# YouTube Subtitle Tool
+# YouTube Subtitle Uploader
 
 <img width="315" height="622" alt="yt-subtitle-tool" src="https://github.com/user-attachments/assets/f8476338-4f26-4ee3-ba77-5419e4dbea00" />
 
-A browser-based tool that streamlines multilingual subtitle creation and editing for YouTube content.
+A web tool that automates multilingual subtitle uploads to YouTube, eliminating the need to manually add subtitle files one by one.
 
-The tool was built to simplify subtitle management by reducing repetitive manual work, making it easier to prepare videos for international audiences.
+The workflow is simple: translate subtitles with AI, package them into a ZIP file, upload the archive, and let the tool handle the rest.
 
-![YouTube Subtitle Tool](assets/homepage.png)
+![YouTube Subtitle Uploader](assets/homepage.png)
+
+## Workflow
+
+AI Translation → Subtitle Files → ZIP Archive → Upload → Automatic YouTube Subtitle Import
 
 ## Features
 
-- Create and edit subtitles in the browser
-- Support multilingual subtitle workflows
-- Export subtitle files for YouTube
-- Lightweight and easy-to-use interface
+- Bulk upload subtitle files to YouTube
+- Import multiple subtitle files from a single ZIP archive
+- Streamline multilingual subtitle publishing
+- Reduce repetitive manual upload tasks
+- Simple browser-based interface
 
 ## Tech Stack
 
 - HTML
 - CSS
 - JavaScript
-
-## Live Demo
-
-(Add your demo link here if available)
+- YouTube API
 
 ## Why I built this
 
-Managing subtitles across multiple languages can be repetitive and time-consuming. I built this tool to simplify the workflow, reduce manual editing, and make multilingual content publishing more efficient.
+Managing subtitles for videos published in multiple languages was repetitive and time-consuming. After translating subtitle files with AI, I still had to upload each language manually through YouTube Studio.
+
+I built this tool to automate that process. By packaging translated subtitle files into a ZIP archive and uploading them through the web interface, multiple language tracks can be added to YouTube with far less manual work.
+
+## Live Demo
+
+Add your live demo URL here.
